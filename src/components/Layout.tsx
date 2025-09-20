@@ -7,8 +7,6 @@ import {
   Award, 
   Users, 
   MapPin,
-  Bell,
-  Search,
   Menu,
   X,
   Leaf
@@ -119,10 +117,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Main content */}
       <div className="md:pl-64 flex flex-col flex-1">
         {/* Top navigation */}
-        <div className="sticky top-0 z-10 md:hidden pl-1 pt-1 sm:pl-3 sm:pt-3 bg-gray-200">
+        <div className="sticky top-0 z-10 md:hidden pl-1 pt-1 sm:pl-3 sm:pt-3 bg-pesiraGray200">
           <button
             type="button"
-            className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+            className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-pesiraGray500 hover:text-pesiraGray900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-6 w-6" />
