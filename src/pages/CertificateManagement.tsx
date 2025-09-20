@@ -91,10 +91,10 @@ const CertificateManagement: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      'valid': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-      'expiring-soon': 'bg-amber-100 text-amber-800 border-amber-200',
-      'expired': 'bg-red-100 text-red-800 border-red-200',
-      'pending': 'bg-blue-100 text-blue-800 border-blue-200'
+      'valid': 'bg-pesiraEmerald100 text-emerald-800 border-emerald-200',
+      'expiring-soon': 'bg-pesiraAmber100 text-amber-800 border-amber-200',
+      'expired': 'bg-pesiraRed100 text-red-800 border-pesiraRed200',
+      'pending': 'bg-pesiraBlue100 text-blue-800 border-blue-200'
     };
     
     const icons = {
@@ -137,62 +137,62 @@ const CertificateManagement: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Certificate Management</h1>
-        <p className="mt-1 text-sm text-gray-600">Manage and track organic certification status</p>
+        <h1 className="text-2xl font-bold text-pesiraGray900">Certificate Management</h1>
+        <p className="mt-1 text-sm text-pesiraGray600">Manage and track organic certification status</p>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-pesiraWhite rounded-lg border border-pesiraGray200 p-4">
           <div className="flex items-center">
-            <div className="bg-emerald-100 p-2 rounded-lg">
+            <div className="bg-pesiraEmerald100 p-2 rounded-lg">
               <CheckCircle className="h-5 w-5 text-emerald-600" />
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Valid Certificates</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-pesiraGray600">Valid Certificates</p>
+              <p className="text-xl font-bold text-pesiraGray900">
                 {certificates.filter(c => c.status === 'valid').length}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-white rounded-lg border border-pesiraGray200 p-4">
           <div className="flex items-center">
-            <div className="bg-amber-100 p-2 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-amber-600" />
+            <div className="bg-pesiraAmber100 p-2 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-pesiraAmber600" />
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Expiring Soon</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-pesiraGray600">Expiring Soon</p>
+              <p className="text-xl font-bold text-pesiraGray900">
                 {certificates.filter(c => c.status === 'expiring-soon').length}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-white rounded-lg border border-pesiraGray200 p-4">
           <div className="flex items-center">
-            <div className="bg-red-100 p-2 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-red-600" />
+            <div className="bg-pesiraRed100 p-2 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-pesiraRed600" />
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Expired</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-pesiraGray600">Expired</p>
+              <p className="text-xl font-bold text-pesiraGray900">
                 {certificates.filter(c => c.status === 'expired').length}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-pesiraWhite rounded-lg border border-pesiraGray200 p-4">
           <div className="flex items-center">
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <Calendar className="h-5 w-5 text-blue-600" />
+            <div className="bg-pesiraBlue100 p-2 rounded-lg">
+              <Calendar className="h-5 w-5 text-pesiraBlue600" />
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Pending</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-pesiraGray600">Pending</p>
+              <p className="text-xl font-bold text-pesiraGray900">
                 {certificates.filter(c => c.status === 'pending').length}
               </p>
             </div>
@@ -201,26 +201,26 @@ const CertificateManagement: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <div className="bg-pesiraWhite rounded-lg shadow-sm border border-pesiraGray200 p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-pesiraGray400" />
               <input
                 type="text"
                 placeholder="Search certificates, farms, or owners..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-pesiraGray300 rounded-md focus:ring-2 focus:ring-pesiraGreen100 focus:border-transparent"
               />
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <Filter className="h-4 w-4 text-gray-400" />
+            <Filter className="h-4 w-4 text-pesiraGray400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="border border-pesiraGray300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-pesiraGreen100 focus:border-transparent"
             >
               <option value="all">All Status</option>
               <option value="valid">Valid</option>
@@ -238,15 +238,15 @@ const CertificateManagement: React.FC = () => {
           const daysUntilExpiry = getDaysUntilExpiry(certificate.expiryDate);
           
           return (
-            <div key={certificate.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <div key={certificate.id} className="bg-pesiraWhite rounded-lg border border-pesiraGray200 p-6 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center">
-                  <div className="bg-gradient-to-r from-blue-500 to-emerald-500 p-2 rounded-lg">
-                    <Award className="h-5 w-5 text-white" />
+                  <div className="bg-gradient-to-r from-pesiraGreen100 to-emerald-500 p-2 rounded-lg">
+                    <Award className="h-5 w-5 text-pesiraWhite" />
                   </div>
                   <div className="ml-3">
-                    <h3 className="text-lg font-semibold text-gray-900">{certificate.farmName}</h3>
-                    <p className="text-sm text-gray-600">{certificate.owner}</p>
+                    <h3 className="text-lg font-semibold text-pesiraGray900">{certificate.farmName}</h3>
+                    <p className="text-sm text-pesiraGray600">{certificate.owner}</p>
                   </div>
                 </div>
                 {getStatusBadge(certificate.status)}
@@ -254,35 +254,35 @@ const CertificateManagement: React.FC = () => {
 
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Certificate #:</span>
-                  <span className="font-medium text-gray-900">{certificate.certificateNumber}</span>
+                  <span className="text-pesiraGray600">Certificate #:</span>
+                  <span className="font-medium text-pesiraGray900">{certificate.certificateNumber}</span>
                 </div>
                 
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Location:</span>
-                  <span className="text-gray-900">{certificate.location}</span>
+                  <span className="text-pesiraGray600">Location:</span>
+                  <span className="text-pesiraGray900">{certificate.location}</span>
                 </div>
                 
                 {certificate.issueDate && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Issue Date:</span>
-                    <span className="text-gray-900">{new Date(certificate.issueDate).toLocaleDateString()}</span>
+                    <span className="text-pesiraGray600">Issue Date:</span>
+                    <span className="text-pesiraGray900">{new Date(certificate.issueDate).toLocaleDateString()}</span>
                   </div>
                 )}
                 
                 {certificate.expiryDate && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Expiry Date:</span>
-                    <span className="text-gray-900">{new Date(certificate.expiryDate).toLocaleDateString()}</span>
+                    <span className="text-pesiraGray600">Expiry Date:</span>
+                    <span className="text-pesiraGray900">{new Date(certificate.expiryDate).toLocaleDateString()}</span>
                   </div>
                 )}
 
                 {daysUntilExpiry !== null && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Days Until Expiry:</span>
+                    <span className="text-pesiraGray600">Days Until Expiry:</span>
                     <span className={`font-medium ${
-                      daysUntilExpiry < 30 ? 'text-red-600' : 
-                      daysUntilExpiry < 90 ? 'text-amber-600' : 'text-emerald-600'
+                      daysUntilExpiry < 30 ? 'text-pesiraRed600' : 
+                      daysUntilExpiry < 90 ? 'text-pesiraAmber600' : 'text-emerald-600'
                     }`}>
                       {daysUntilExpiry > 0 ? `${daysUntilExpiry} days` : 'Expired'}
                     </span>
@@ -290,11 +290,11 @@ const CertificateManagement: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex space-x-3 mt-6 pt-4 border-t border-gray-200">
+              <div className="flex space-x-3 mt-6 pt-4 border-t border-pesiraGray200">
                 {certificate.status === 'pending' ? (
                   <button
                     onClick={() => handleGenerateCertificate(certificate)}
-                    className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-pesiraWhite bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald hover:from-pesiraGreen500 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pesiraGreen100 transition-colors"
                   >
                     <Award className="h-4 w-4 mr-2" />
                     Generate Certificate
@@ -302,14 +302,14 @@ const CertificateManagement: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => handleDownloadCertificate(certificate)}
-                    className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-pesiraGray300 text-sm font-medium rounded-md text-pesiraGray700 bg-pesiraWhite hover:bg-pesiraGray50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pesiraGreen100 transition-colors"
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Download PDF
                   </button>
                 )}
                 
-                <button className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                <button className="px-4 py-2 border border-pesiraGray300 text-sm font-medium rounded-md text-pesiraGray700 bg-pesiraWhite hover:bg-pesiraGray50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pesiraGreen100 transition-colors">
                   View Details
                 </button>
               </div>
@@ -320,9 +320,9 @@ const CertificateManagement: React.FC = () => {
 
       {filteredCertificates.length === 0 && (
         <div className="text-center py-12">
-          <Award className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No certificates found</h3>
-          <p className="mt-1 text-sm text-gray-500">Try adjusting your search criteria</p>
+          <Award className="mx-auto h-12 w-12 text-pesiraGray400" />
+          <h3 className="mt-2 text-sm font-medium text-pesiraGray900">No certificates found</h3>
+          <p className="mt-1 text-sm text-pesiraGray500">Try adjusting your search criteria</p>
         </div>
       )}
     </div>
