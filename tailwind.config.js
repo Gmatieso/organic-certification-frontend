@@ -29,6 +29,11 @@ export default {
             pesiraPurple600: '#7C3AED',
             pesiraPurple500: '#9333EA',
             pesiraBlue100: '#D1E9FF',
+            pesiraEmerald500: '#10B981',
+            pesiraEmerald700: '#059669',
+            pesiraGreen500: '#16A34A',
+            pesiraGray300: '#D1D5DB',
+            pesiraGray100: '#F3F4F6'
         }
     },
   },
