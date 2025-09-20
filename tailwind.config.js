@@ -14,6 +14,9 @@ export default {
             pesiraGray400: '#9CA3AF',
             pesiraGray500: '#6B7280',
             pesiraGray200: '#E5E7EB',
+            pesiraGray600: '#4B5563',
+            pesiraGray50: '#F9FAFB',
+            pesiraGray900: '#1F2937',
         }
     },
   },
