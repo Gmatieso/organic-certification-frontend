@@ -169,7 +169,7 @@ const FieldManagement: React.FC = () => {
   };
 
   const filteredAndSortedFields = useMemo(() => {
-    let filtered = fields.filter(field => {
+    const filtered = fields.filter(field => {
       const matchesSearch = field.fieldName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            field.farmName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            field.crop.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -202,9 +202,9 @@ const FieldManagement: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      active: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-      fallow: 'bg-amber-100 text-amber-800 border-amber-200',
-      preparing: 'bg-blue-100 text-blue-800 border-blue-200'
+      active: 'bg-pesiraEmerald100 text-emerald-800 border-emerald-200',
+      fallow: 'bg-pesiraAmber100 text-amber-800 border-amber-200',
+      preparing: 'bg-pesiraBlue100 text-blue-800 border-blue-200'
     };
     
     return (
@@ -217,7 +217,7 @@ const FieldManagement: React.FC = () => {
   const getCertificationBadge = (status: string) => {
     const styles = {
       certified: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-      'in-progress': 'bg-amber-100 text-amber-800 border-amber-200',
+      'in-progress': 'bg-pesiraAmber100 text-amber-800 border-amber-200',
       'not-certified': 'bg-red-100 text-red-800 border-red-200'
     };
     
@@ -239,10 +239,10 @@ const FieldManagement: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Field Management</h1>
-          <p className="mt-1 text-sm text-gray-600">Manage agricultural fields and their cultivation details</p>
+          <h1 className="text-2xl font-bold text-pesiraGray900">Field Management</h1>
+          <p className="mt-1 text-sm text-pesiraGray600">Manage agricultural fields and their cultivation details</p>
         </div>
-        <button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+        <button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-pesiraWhite bg-gradient-to-r from-pesiraGreen to-pesiraEmerald hover:from-pesiraGreen500 hover:to-pesiraEmerald700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pesiraGreen500 transition-colors">
           <Plus className="h-4 w-4 mr-2" />
           Add New Field
         </button>
@@ -250,54 +250,54 @@ const FieldManagement: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-pesiraWhite rounded-lg border border-pesiraGray200 p-4">
           <div className="flex items-center">
-            <div className="bg-green-100 p-2 rounded-lg">
-              <MapPin className="h-5 w-5 text-green-600" />
+            <div className="bg-pesiraGreen100 p-2 rounded-lg">
+              <MapPin className="h-5 w-5 text-pesiraGreen600" />
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Total Fields</p>
-              <p className="text-xl font-bold text-gray-900">{fields.length}</p>
+              <p className="text-sm font-medium text-pesiraGray600">Total Fields</p>
+              <p className="text-xl font-bold text-pesiraGray900">{fields.length}</p>
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+
+        <div className="bg-white rounded-lg border border-pesiraGray200 p-4">
           <div className="flex items-center">
             <div className="bg-emerald-100 p-2 rounded-lg">
-              <Wheat className="h-5 w-5 text-emerald-600" />
+              <Wheat className="h-5 w-5 text-pesiraEmerald600" />
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Active Fields</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-pesiraGray600">Active Fields</p>
+              <p className="text-xl font-bold text-pesiraGray900">
                 {fields.filter(f => f.status === 'active').length}
               </p>
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+
+        <div className="bg-white rounded-lg border border-pesiraGray200 p-4">
           <div className="flex items-center">
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <Calendar className="h-5 w-5 text-blue-600" />
+            <div className="bg-pesiraBlue100 p-2 rounded-lg">
+              <Calendar className="h-5 w-5 text-pesiraBlue600" />
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Certified</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-pesiraGray600">Certified</p>
+              <p className="text-xl font-bold text-pesiraGray900">
                 {fields.filter(f => f.certificationStatus === 'certified').length}
               </p>
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+
+        <div className="bg-white rounded-lg border border-pesiraGray200 p-4">
           <div className="flex items-center">
-            <div className="bg-purple-100 p-2 rounded-lg">
-              <MapPin className="h-5 w-5 text-purple-600" />
+            <div className="bg-pesiraPurple100 p-2 rounded-lg">
+              <MapPin className="h-5 w-5 text-pesiraPurple600" />
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Total Area</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-pesiraGray600">Total Area</p>
+              <p className="text-xl font-bold text-pesiraGray900">
                 {fields.reduce((sum, field) => sum + field.areaHa, 0).toFixed(1)} Ha
               </p>
             </div>
@@ -306,26 +306,26 @@ const FieldManagement: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <div className="bg-white rounded-lg shadow-sm border border-pesiraGray200 p-4">
         <div className="flex flex-col xl:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-pesiraGray400" />
               <input
                 type="text"
                 placeholder="Search fields, farms, crops, or farmers..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pesiraGreen200 focus:border-transparent"
               />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4">
-            <Filter className="h-4 w-4 text-gray-400" />
+            <Filter className="h-4 w-4 text-pesiraGray400" />
             <select
               value={farmFilter}
               onChange={(e) => setFarmFilter(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-pesiraGreen200 focus:border-transparent"
             >
               <option value="all">All Farms</option>
               {farms.map(farm => (
@@ -335,7 +335,7 @@ const FieldManagement: React.FC = () => {
             <select
               value={cropFilter}
               onChange={(e) => setCropFilter(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-pesiraGreen200 focus:border-transparent"
             >
               <option value="all">All Crops</option>
               {crops.map(crop => (
@@ -345,7 +345,7 @@ const FieldManagement: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-pesiraGreen200 focus:border-transparent"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -357,13 +357,13 @@ const FieldManagement: React.FC = () => {
       </div>
 
       {/* Fields Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-pesiraGray200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-pesiraGray200">
             <thead className="bg-gray-50">
               <tr>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                   onClick={() => handleSort('fieldName')}
                 >
                   <div className="flex items-center space-x-1">
@@ -371,8 +371,8 @@ const FieldManagement: React.FC = () => {
                     <ArrowUpDown className="h-3 w-3" />
                   </div>
                 </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                   onClick={() => handleSort('farmName')}
                 >
                   <div className="flex items-center space-x-1">
@@ -380,8 +380,8 @@ const FieldManagement: React.FC = () => {
                     <ArrowUpDown className="h-3 w-3" />
                   </div>
                 </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                   onClick={() => handleSort('crop')}
                 >
                   <div className="flex items-center space-x-1">
@@ -389,8 +389,8 @@ const FieldManagement: React.FC = () => {
                     <ArrowUpDown className="h-3 w-3" />
                   </div>
                 </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                   onClick={() => handleSort('areaHa')}
                 >
                   <div className="flex items-center space-x-1">
@@ -398,21 +398,21 @@ const FieldManagement: React.FC = () => {
                     <ArrowUpDown className="h-3 w-3" />
                   </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
                   Certification
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
                   Last Inspection
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-pesiraGray200">
               {filteredAndSortedFields.map((field) => (
                 <tr key={field.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -421,22 +421,22 @@ const FieldManagement: React.FC = () => {
                         <MapPin className="h-4 w-4 text-white" />
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{field.fieldName}</div>
-                        <div className="text-sm text-gray-500">{field.farmer}</div>
+                        <div className="text-sm font-medium text-pesiraGray900">{field.fieldName}</div>
+                        <div className="text-sm text-pesiraGray500">{field.farmer}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{field.farmName}</div>
-                    <div className="text-sm text-gray-500">{field.county}</div>
+                    <div className="text-sm text-pesiraGray900">{field.farmName}</div>
+                    <div className="text-sm text-pesiraGray500">{field.county}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <Wheat className="h-3 w-3 text-gray-400 mr-1" />
+                    <div className="flex items-center text-sm text-pesiraGray900">
+                      <Wheat className="h-3 w-3 text-pesiraGray400 mr-1" />
                       {field.crop}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-pesiraGray900">
                     {field.areaHa}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -445,23 +445,23 @@ const FieldManagement: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     {getCertificationBadge(field.certificationStatus)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-pesiraGray900">
                     <div className="flex items-center">
-                      <Calendar className="h-3 w-3 text-gray-400 mr-1" />
+                      <Calendar className="h-3 w-3 text-pesiraGray400 mr-1" />
                       {new Date(field.lastInspection).toLocaleDateString()}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-1">
-                      <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-600 bg-blue-100 hover:bg-blue-200 transition-colors">
+                      <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-pesiraBlue600 bg-pesiraBlue100 hover:bg-blue-200 transition-colors">
                         <Eye className="h-3 w-3 mr-1" />
                         View
                       </button>
-                      <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-emerald-600 bg-emerald-100 hover:bg-emerald-200 transition-colors">
+                      <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-pesiraEmerald600 bg-emerald-100 hover:bg-emerald-200 transition-colors">
                         <Edit className="h-3 w-3 mr-1" />
                         Edit
                       </button>
-                      <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-purple-600 bg-purple-100 hover:bg-purple-200 transition-colors">
+                      <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-pesiraPurple600 bg-pesiraPurple100 hover:bg-pesiraPurple200 transition-colors">
                         <History className="h-3 w-3 mr-1" />
                         History
                       </button>
@@ -475,9 +475,9 @@ const FieldManagement: React.FC = () => {
         
         {filteredAndSortedFields.length === 0 && (
           <div className="text-center py-12">
-            <MapPin className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No fields found</h3>
-            <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria</p>
+            <MapPin className="mx-auto h-12 w-12 text-pesiraGray400" />
+            <h3 className="mt-2 text-sm font-medium text-pesiraGray900">No fields found</h3>
+            <p className="mt-1 text-sm text-pesiraGray500">Try adjusting your search or filter criteria</p>
           </div>
         )}
       </div>
