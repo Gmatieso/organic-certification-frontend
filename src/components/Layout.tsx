@@ -83,14 +83,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
-        <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200 bg-white">
+        <div className="flex-1 flex flex-col min-h-0 border-r border-pesiraGreen200 bg-pesiraWhite">
           <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
             <div className="flex items-center flex-shrink-0 px-4">
               <div className="flex items-center">
-                <div className="bg-gradient-to-r from-blue-500 to-emerald-500 p-2 rounded-lg">
-                  <Leaf className="h-6 w-6 text-white" />
+                <div className="bg-gradient-to-r from-pesiraGreen to-pesiraEmerald p-2 rounded-lg">
+                  <Leaf className="h-6 w-6 text-pesiraWhite" />
                 </div>
-                <span className="ml-3 text-xl font-bold text-gray-900">Pesira</span>
+                <span className="ml-3 text-xl font-bold text-pesiraGray">AgriTrack</span>
               </div>
             </div>
             <nav className="mt-8 flex-1 px-2 space-y-1">
@@ -102,11 +102,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     to={item.href}
                     className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
                       isActive
-                        ? 'bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-600 border-r-2 border-blue-500'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-gradient-to-r from-pesiraGreen200 to-pesiraEmarald50 text-pesiraBlack'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-pesiraGray'
                     }`}
                   >
-                    <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}`} />
+                    <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-pesiraGreen' : 'text-pesiraGray400 group-hover:text-pesiraGray500'}`} />
                     {item.name}
                   </Link>
                 );
