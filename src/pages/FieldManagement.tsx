@@ -91,7 +91,7 @@ const FieldManagement: React.FC = () => {
             setResponseMsg(`${data.message}`)
             if (response.ok) {
                 setFields(prev => [...prev, data.data]);
-                setnewField({name: '', crop: '', areaHa: 0, farmId: ''})
+                setnewField({name: '', crop: '', areaHa: '', farmId: ''})
                 setShowForm(false);
             }
         }catch(error){
