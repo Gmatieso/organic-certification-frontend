@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { ChevronLeft, ChevronRight, Check, MapPin, ClipboardCheck, FileText } from 'lucide-react';
 
 interface Farm {
@@ -11,6 +11,10 @@ interface Farm {
 const InspectionWorkflow: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedFarm, setSelectedFarm] = useState<Farm | null>(null);
+  const [step, setStep] = useState<number>(1);
+  const [farms, setFarms] = useState<Farm[]>([]);
+  const [selectedFarm, setSelectedFarm] = useState<string>("");
+  const [inspectionId, setInspectionId] = useState<string | null>(null);
   const [inspectionData, setInspectionData] = useState({
     inspector: '',
     date: '',
@@ -24,12 +28,37 @@ const InspectionWorkflow: React.FC = () => {
     recommendations: ''
   });
 
-  const farms: Farm[] = [
-    { id: 1, name: 'Green Valley Farm', location: 'Kiambu County', owner: 'John Kamau' },
-    { id: 2, name: 'Sunrise Organic', location: 'Nakuru County', owner: 'Mary Wanjiku' },
-    { id: 3, name: 'Highland Coffee Estate', location: 'Nyeri County', owner: 'David Mwangi' },
-    { id: 4, name: 'Fresh Herbs Kenya', location: 'Meru County', owner: 'Grace Njeri' },
-  ];
+    useEffect(()=> {
+        fetch('https://organic-certification-production.up.railway.app/api/v1/farm')
+            .then(res => res.json())
+            .then(json => {
+                if(json.data && json.data.content) {
+                    setFarms(json.data.content);
+                }
+            })
+            .catch(err => console.log('Error fetching farms:', err))
+    }, [])
+
+    // lets intiate inspection when farm is selected
+    const handleFarmNext = async () => {
+        if (!selectedFarm) return;
+
+        try {
+            const res = await fetch(
+                'https://organic-certification-production.up.railway.app/api/v1/inspection',
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ farmId: selectedFarm.id }),
+                }
+            );
+            const json = await res.json();
+            setInspectionId(json.data.inspectionId);
+            setStep(2); // move to the next step
+        } catch (err) {
+            console.error("Failed to initiate inspection", err);
+        }
+    };
 
   const steps = [
     { id: 1, name: 'Farm Selection', icon: MapPin },
