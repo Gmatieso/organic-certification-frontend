@@ -34,7 +34,7 @@ const FieldManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortField, setSortField] = useState<keyof Field>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [farm, setFarm] = useState<FarmResponse | null>(null);
+  const [farms, setFarms] = useState<FarmResponse[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [newField, setnewField] = useState({
     name: '',
@@ -62,11 +62,12 @@ const FieldManagement: React.FC = () => {
         fetch('https://organic-certification-production.up.railway.app/api/v1/farm')
             .then(res => res.json())
             .then(json => {
-                if(json.data?.content) {
-                    setFarm(json.data.content);
+                if (json.data?.content) {
+                    setFarms(json.data.content);
                 }
             })
-    }, [])
+            .catch(err => console.error("Error fetching farms:", err));
+    }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
