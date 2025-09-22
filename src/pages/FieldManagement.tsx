@@ -39,7 +39,7 @@ const FieldManagement: React.FC = () => {
   const [newField, setnewField] = useState({
     name: '',
     crop: '',
-    areaHa: 0,
+    areaHa: '',
     farmId: ''
   })
 
@@ -150,7 +150,9 @@ const FieldManagement: React.FC = () => {
           <h1 className="text-2xl font-bold text-pesiraGray900">Field Management</h1>
           <p className="mt-1 text-sm text-pesiraGray600">Manage agricultural fields and their cultivation details</p>
         </div>
-        <button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-pesiraWhite bg-gradient-to-r from-pesiraGreen to-pesiraEmerald hover:from-pesiraGreen500 hover:to-pesiraEmerald700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pesiraGreen500 transition-colors">
+        <button
+            onClick={() => setShowForm(!showForm)}
+            className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-pesiraWhite bg-gradient-to-r from-pesiraGreen to-pesiraEmerald hover:from-pesiraGreen500 hover:to-pesiraEmerald700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pesiraGreen500 transition-colors">
           <Plus className="h-4 w-4 mr-2" />
           Add New Field
         </button>
@@ -345,7 +347,7 @@ const FieldManagement: React.FC = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort('namefi')}
+                  onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center space-x-1">
                     <span>Farm</span>
