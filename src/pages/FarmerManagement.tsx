@@ -20,6 +20,17 @@ const FarmerManagement: React.FC = () => {
   const [sortField, setSortField] = useState<keyof Farmer>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
+  const [showForm, setShowForm] = useState(false);
+
+  const [newFarmer, setNewFarmer] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    county: ''
+  });
+
+  const [responseMsg, setResponseMsg] = useState<string | null>(null);
+
   const farmers: Farmer[] = [
     {
       id: 1,
@@ -145,6 +156,34 @@ const FarmerManagement: React.FC = () => {
     );
   };
 
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setNewFarmer(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e:React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('https://organic-certification-production.up.railway.app/api/v1/farmer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(newFarmer)
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setResponseMsg(`${data.message}`)
+                setNewFarmer({ name: '', phone: '', email: '', county: '' });
+                setShowForm(false);
+            }else {
+                setResponseMsg(`❌ Error: ${data.message}`);
+            }
+        }catch (error) {
+            setResponseMsg(`❌ Network error: ${(error as Error).message}`);
+        }
+    }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -153,11 +192,71 @@ const FarmerManagement: React.FC = () => {
           <h1 className="text-2xl font-bold text-pesiraGray900">Farmer Management</h1>
           <p className="mt-1 text-sm text-pesiraGray600">Manage registered farmers and their information</p>
         </div>
-        <button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-pesiraGreen to-pesiraEmerald hover:from-pesiraGreen500 hover:to-pesiraEmerald700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pesiraGreen500 transition-colors">
+        <button
+            onClick={() => setShowForm(!showForm)}
+            className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-pesiraGreen to-pesiraEmerald hover:from-pesiraGreen500 hover:to-pesiraEmerald700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pesiraGreen500 transition-colors">
           <Plus className="h-4 w-4 mr-2" />
           Add New Farmer
         </button>
       </div>
+
+        {/* Add Farmer Form */}
+        {showForm && (
+            <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg border shadow-md space-y-4">
+                <h2 className="text-lg font-semibold text-gray-800">New Farmer</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <input
+                        type="text"
+                        name="name"
+                        value={newFarmer.name}
+                        onChange={handleInputChange}
+                        placeholder="Full Name"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                    <input
+                        type="text"
+                        name="phone"
+                        value={newFarmer.phone}
+                        onChange={handleInputChange}
+                        placeholder="Phone Number"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                    <input
+                        type="email"
+                        name="email"
+                        value={newFarmer.email}
+                        onChange={handleInputChange}
+                        placeholder="Email Address"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                    <input
+                        type="text"
+                        name="county"
+                        value={newFarmer.county}
+                        onChange={handleInputChange}
+                        placeholder="County"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                </div>
+                <button
+                    type="submit"
+                    className="px-4 py-2 bg-pesiraGreen text-white rounded-md hover:bg-pesiraEmerald"
+                >
+                    Submit
+                </button>
+            </form>
+        )}
+
+        {/* Response */}
+        {responseMsg && (
+            <div className="p-3 rounded-md bg-gray-100 text-sm text-gray-700">
+                {responseMsg}
+            </div>
+        )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
