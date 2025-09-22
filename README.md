@@ -1,4 +1,18 @@
 ## organic-certification-frontend
+**Prerequisite**:
+Make sure you have installed.
+**Node.js 18+**
+npm 
+## 🔧 Steps
+1. Clone the repo:
+    `git clone https://organic-certification-frontend
+     cd organic-certification-frontend`
+
+2. Install dependencies
+    `npm install `
+   
+4.  Run Development Server
+    `npm run dev `
 ## Dashboard Preview
 <img width="1318" height="594" alt="image" src="https://github.com/user-attachments/assets/2cba398d-5e80-45d3-8805-b4f32848b43f" />
 ## Farms Preview
