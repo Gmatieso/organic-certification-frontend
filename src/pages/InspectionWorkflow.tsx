@@ -9,11 +9,9 @@ interface Farm {
 }
 
 const InspectionWorkflow: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState<number>(1);
   const [selectedFarm, setSelectedFarm] = useState<Farm | null>(null);
-  const [step, setStep] = useState<number>(1);
   const [farms, setFarms] = useState<Farm[]>([]);
-  const [selectedFarm, setSelectedFarm] = useState<string>("");
   const [inspectionId, setInspectionId] = useState<string | null>(null);
   const [inspectionData, setInspectionData] = useState({
     inspector: '',
@@ -390,7 +388,7 @@ const InspectionWorkflow: React.FC = () => {
 
           {currentStep < 3 ? (
             <button
-              onClick={nextStep}
+              onClick={handleFarmNext}
               disabled={currentStep === 1 && !selectedFarm}
               className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-pesiraWhite transition-colors ${
                 (currentStep === 1 && !selectedFarm)
