@@ -1,15 +1,21 @@
-import React, { useState, useMemo } from 'react';
+import React, {useState, useMemo, useEffect} from 'react';
 import { Search, Plus, MapPin, Calendar, ArrowUpDown, Filter } from 'lucide-react';
 
-interface Farm {
-  id: number;
+
+interface Farmer {
+  id: string;
   name: string;
+  phone: string;
+  email: string;
+  county: string;
+}
+
+interface Farm {
+  id: string;
+  farmName: string;
   location: string;
   areaHa: number;
-  owner: string;
-  status: 'active' | 'pending' | 'suspended';
-  lastInspection: string;
-  certificateStatus: 'valid' | 'expired' | 'pending';
+  farmResponse: Farmer;
 }
 
 const FarmListing: React.FC = () => {
@@ -17,15 +23,57 @@ const FarmListing: React.FC = () => {
   const [sortField, setSortField] = useState<keyof Farm>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showForm, setShowForm] = useState(false);
+  const [newFarm, setnewFarm] = useState({
+      farmName:"",
+      location:"",
+      areaHa:"",
+      farmerId:""
+  })
 
-  const farms: Farm[] = [
-    { id: 1, name: 'Green Valley Farm', location: 'Kiambu County', areaHa: 25.5, owner: 'John Kamau', status: 'active', lastInspection: '2024-01-15', certificateStatus: 'valid' },
-    { id: 2, name: 'Sunrise Organic', location: 'Nakuru County', areaHa: 45.2, owner: 'Mary Wanjiku', status: 'active', lastInspection: '2024-01-20', certificateStatus: 'valid' },
-    { id: 3, name: 'Highland Coffee Estate', location: 'Nyeri County', areaHa: 120.8, owner: 'David Mwangi', status: 'pending', lastInspection: '2023-12-10', certificateStatus: 'pending' },
-    { id: 4, name: 'Fresh Herbs Kenya', location: 'Meru County', areaHa: 15.3, owner: 'Grace Njeri', status: 'active', lastInspection: '2024-01-05', certificateStatus: 'expired' },
-    { id: 5, name: 'Organic Maize Fields', location: 'Uasin Gishu County', areaHa: 200.0, owner: 'Peter Kipchoge', status: 'active', lastInspection: '2024-01-12', certificateStatus: 'valid' },
-    { id: 6, name: 'Tropical Fruits Co.', location: 'Machakos County', areaHa: 80.7, owner: 'Susan Mutua', status: 'suspended', lastInspection: '2023-11-30', certificateStatus: 'expired' },
-  ];
+    const [responseMsg, setResponseMsg] = useState<string | null>(null);
+
+    const [farms, setFarms] = useState<Farm[]>([]);
+
+  useEffect(()=> {
+      fetch('https://organic-certification-production.up.railway.app/api/v1/farm')
+          .then(res => res.json())
+          .then(json => {
+              if(json.data && json.data.content) {
+                  setFarms(json.data.content);
+              }
+          })
+          .catch(err => console.log('Error fetching farms:', err))
+  })
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setnewFarm(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e:React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('https://organic-certification-production.up.railway.app/api/v1/farm', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(newFarm)
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setResponseMsg(`${data.message}`)
+                setnewFarm({ name: '', location: '', area: '', owner: '', phone: '', email: '' });
+                setShowForm(false);
+            }else {
+                setResponseMsg(`❌ Error: ${data.message}`);
+            }
+        }catch (error) {
+            setResponseMsg(`❌ Network error: ${(error as Error).message}`);
+        }
+    }
+  
 
   const handleSort = (field: keyof Farm) => {
     if (field === sortField) {
@@ -107,7 +155,65 @@ const FarmListing: React.FC = () => {
         </button>
       </div>
 
-      {/* Filters */}
+        {/* Add Farm Form */}
+        {showForm && (
+            <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg border shadow-md space-y-4">
+                <h2 className="text-lg font-semibold text-gray-800">New Farmer</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <input
+                        type="text"
+                        name="name"
+                        value={newFarm.name}
+                        onChange={handleInputChange}
+                        placeholder="Full Name"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                    <input
+                        type="text"
+                        name="phone"
+                        value={newFarm.phone}
+                        onChange={handleInputChange}
+                        placeholder="Phone Number"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                    <input
+                        type="email"
+                        name="email"
+                        value={newFarm.email}
+                        onChange={handleInputChange}
+                        placeholder="Email Address"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                    <input
+                        type="text"
+                        name="county"
+                        value={newFarm.area}
+                        onChange={handleInputChange}
+                        placeholder="Area"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                </div>
+                <button
+                    type="submit"
+                    className="px-4 py-2 bg-pesiraGreen text-white rounded-md hover:bg-pesiraEmerald"
+                >
+                    Submit
+                </button>
+            </form>
+        )}
+
+        {/* Response */}
+        {responseMsg && (
+            <div className="p-3 rounded-md bg-gray-100 text-sm text-gray-700">
+                {responseMsg}
+            </div>
+        )}
+
+        {/* Filters */}
       <div className="bg-pesiraWhite rounded-lg shadow-sm border border-pesiraGray200 p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
