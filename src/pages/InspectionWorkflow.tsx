@@ -60,7 +60,30 @@ const InspectionWorkflow: React.FC = () => {
         }
     };
 
-  const steps = [
+    //  function to PATCH inspection updates
+    const updateInspection = async () => {
+        if (!inspectionId) return;
+
+        try {
+            const res = await fetch(
+                `https://organic-certification-production.up.railway.app/api/v1/inspection/${inspectionId}`,
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(inspectionData),
+                }
+            );
+
+            const json = await res.json();
+            console.log("Updated inspection:", json);
+            alert("Inspection details saved successfully!");
+        } catch (err) {
+            console.error("Failed to update inspection", err);
+        }
+    };
+
+
+    const steps = [
     { id: 1, name: 'Farm Selection', icon: MapPin },
     { id: 2, name: 'Inspection Details', icon: ClipboardCheck },
     { id: 3, name: 'Summary & Submit', icon: FileText },
