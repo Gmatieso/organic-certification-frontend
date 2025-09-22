@@ -1,18 +1,30 @@
-import React, { useState, useMemo } from 'react';
+import React, {useState, useMemo, useEffect} from 'react';
 import { Search, Plus, MapPin, Wheat, Calendar, Filter, ArrowUpDown, Eye, Edit, History } from 'lucide-react';
 
-interface Field {
-  id: number;
-  fieldName: string;
+
+
+interface FarmerResponse {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  county: string;
+}
+
+interface FarmResponse {
+  id: string;
   farmName: string;
+  location: string;
+  areaHa: number;
+  farmerResponse: FarmerResponse;
+}
+
+interface Field {
+  id: string;
+  name: string;
   crop: string;
   areaHa: number;
-  farmer: string;
-  county: string;
-  status: 'active' | 'fallow' | 'preparing';
-  lastInspection: string;
-  nextInspection: string;
-  certificationStatus: 'certified' | 'in-progress' | 'not-certified';
+  farmResponse: FarmResponse;
 }
 
 const FieldManagement: React.FC = () => {
@@ -22,141 +34,72 @@ const FieldManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortField, setSortField] = useState<keyof Field>('fieldName');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [farm, setFarm] = useState<FarmResponse | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [newField, setnewField] = useState({
+    fieldName: '',
+    crop: '',
+    areaHa: 0,
+    farmId: ''
+  })
 
-  const fields: Field[] = [
-    {
-      id: 1,
-      fieldName: 'North Field A',
-      farmName: 'Green Valley Farm',
-      crop: 'Coffee',
-      areaHa: 12.5,
-      farmer: 'John Kamau',
-      county: 'Kiambu',
-      status: 'active',
-      lastInspection: '2024-01-15',
-      nextInspection: '2024-04-15',
-      certificationStatus: 'certified'
-    },
-    {
-      id: 2,
-      fieldName: 'South Field B',
-      farmName: 'Green Valley Farm',
-      crop: 'Maize',
-      areaHa: 13.0,
-      farmer: 'John Kamau',
-      county: 'Kiambu',
-      status: 'active',
-      lastInspection: '2024-01-15',
-      nextInspection: '2024-04-15',
-      certificationStatus: 'certified'
-    },
-    {
-      id: 3,
-      fieldName: 'Organic Plot 1',
-      farmName: 'Sunrise Organic',
-      crop: 'Vegetables',
-      areaHa: 25.2,
-      farmer: 'Mary Wanjiku',
-      county: 'Nakuru',
-      status: 'active',
-      lastInspection: '2024-01-20',
-      nextInspection: '2024-04-20',
-      certificationStatus: 'certified'
-    },
-    {
-      id: 4,
-      fieldName: 'Coffee Estate Main',
-      farmName: 'Highland Coffee Estate',
-      crop: 'Coffee',
-      areaHa: 80.0,
-      farmer: 'David Mwangi',
-      county: 'Nyeri',
-      status: 'active',
-      lastInspection: '2023-12-10',
-      nextInspection: '2024-03-10',
-      certificationStatus: 'in-progress'
-    },
-    {
-      id: 5,
-      fieldName: 'Coffee Estate North',
-      farmName: 'Highland Coffee Estate',
-      crop: 'Coffee',
-      areaHa: 40.8,
-      farmer: 'David Mwangi',
-      county: 'Nyeri',
-      status: 'preparing',
-      lastInspection: '2023-12-10',
-      nextInspection: '2024-03-10',
-      certificationStatus: 'not-certified'
-    },
-    {
-      id: 6,
-      fieldName: 'Herb Garden 1',
-      farmName: 'Fresh Herbs Kenya',
-      crop: 'Herbs',
-      areaHa: 8.3,
-      farmer: 'Grace Njeri',
-      county: 'Meru',
-      status: 'active',
-      lastInspection: '2024-01-05',
-      nextInspection: '2024-04-05',
-      certificationStatus: 'certified'
-    },
-    {
-      id: 7,
-      fieldName: 'Herb Garden 2',
-      farmName: 'Fresh Herbs Kenya',
-      crop: 'Herbs',
-      areaHa: 7.0,
-      farmer: 'Grace Njeri',
-      county: 'Meru',
-      status: 'fallow',
-      lastInspection: '2024-01-05',
-      nextInspection: '2024-04-05',
-      certificationStatus: 'not-certified'
-    },
-    {
-      id: 8,
-      fieldName: 'Main Field',
-      farmName: 'Organic Maize Fields',
-      crop: 'Maize',
-      areaHa: 120.0,
-      farmer: 'Peter Kipchoge',
-      county: 'Uasin Gishu',
-      status: 'active',
-      lastInspection: '2024-01-12',
-      nextInspection: '2024-04-12',
-      certificationStatus: 'certified'
-    },
-    {
-      id: 9,
-      fieldName: 'Extension Field',
-      farmName: 'Organic Maize Fields',
-      crop: 'Sorghum',
-      areaHa: 80.0,
-      farmer: 'Peter Kipchoge',
-      county: 'Uasin Gishu',
-      status: 'active',
-      lastInspection: '2024-01-12',
-      nextInspection: '2024-04-12',
-      certificationStatus: 'certified'
-    },
-    {
-      id: 10,
-      fieldName: 'Tropical Garden',
-      farmName: 'Tropical Fruits Co.',
-      crop: 'Mixed Fruits',
-      areaHa: 80.7,
-      farmer: 'Susan Mutua',
-      county: 'Machakos',
-      status: 'fallow',
-      lastInspection: '2023-11-30',
-      nextInspection: '2024-02-28',
-      certificationStatus: 'not-certified'
+    const [responseMsg, setResponseMsg] = useState<string | null>(null);
+    const [fields, setFields] = useState<Field[]>([]);
+
+
+    useEffect(()=> {
+        fetch('https://organic-certification-production.up.railway.app/api/v1/fields')
+            .then(res => res.json())
+            .then(json => {
+                if(json.data && json.data.content) {
+                    setFields(json.data.content);
+                }
+            })
+            .catch(err => console.log('Error fetching fields:', err))
+    }, [])
+
+    useEffect(() => {
+        fetch('https://organic-certification-production.up.railway.app/api/v1/farm')
+            .then(res => res.json())
+            .then(json => {
+                if(json.data?.content) {
+                    setFarm(json.data.content);
+                }
+            })
+    }, [])
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setnewField(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async(e:React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('https://organic-certification-production.up.railway.app/api/v1/fields', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ...newField,
+                    areaHa: parseInt(newField.areaHa),
+                })
+            });
+            const data = await response.json();
+            setResponseMsg(`${data.message}`)
+            if (response.ok) {
+                setResponseMsg(`${data.message}`)
+                setnewField({fieldName: '', crop: '', areaHa: 0, farmId: ''})
+                setShowForm(false);
+                setFields(prev => [...prev, data.data]);
+            }
+        }catch(error){
+            setResponseMsg(`❌ Network error: ${(error as Error).message}`);
+        }
     }
-  ];
 
-  const farms = [...new Set(fields.map(field => field.farmName))].sort();
+  const farms = [...new Set(fields.map(field => fields.farmName))].sort();
   const crops = [...new Set(fields.map(field => field.crop))].sort();
 
   const handleSort = (field: keyof Field) => {
@@ -247,6 +190,63 @@ const FieldManagement: React.FC = () => {
           Add New Field
         </button>
       </div>
+
+        {/* Add Field Form */}
+        {showForm && (
+            <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg border shadow-md space-y-4">
+                <h2 className="text-lg font-semibold text-gray-800">New Field</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <input
+                        type="text"
+                        name="fieldName"
+                        value={newField.fieldName}
+                        onChange={handleInputChange}
+                        placeholder="Field Name"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                    <input
+                        type="text"
+                        name="Crop"
+                        value={newField.crop}
+                        onChange={handleInputChange}
+                        placeholder="Crop"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="areaHa"
+                        value={newField.areaHa}
+                        onChange={handleInputChange}
+                        placeholder="Area (Ha)"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                    <select
+                        name="farmerId"
+                        value={newField.farmId}
+                        onChange={handleInputChange}
+                        required
+                        className="border rounded-md px-3 py-2"
+                    >
+                        <option value="">Select Farm</option>
+                        {farms.map(farm => (
+                            <option key={farm.id} value={farm.id}>
+                                {farm.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <button
+                    type="submit"
+                    className="px-4 py-2 bg-pesiraGreen text-white rounded-md hover:bg-pesiraEmerald"
+                >
+                    Submit
+                </button>
+            </form>
+        )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
