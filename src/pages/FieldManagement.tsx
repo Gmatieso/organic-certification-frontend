@@ -99,7 +99,7 @@ const FieldManagement: React.FC = () => {
         }
     }
 
-  const farms = [...new Set(fields.map(field => fields.farmName))].sort();
+  // const farms = [...new Set(fields.map(field => fields.))].sort();
   const crops = [...new Set(fields.map(field => field.crop))].sort();
 
   const handleSort = (field: keyof Field) => {
@@ -113,16 +113,16 @@ const FieldManagement: React.FC = () => {
 
   const filteredAndSortedFields = useMemo(() => {
     const filtered = fields.filter(field => {
-      const matchesSearch = field.fieldName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           field.farmName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch = field.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           field.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            field.crop.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           field.farmer.toLowerCase().includes(searchTerm.toLowerCase());
+                           field.farmResponse.farmerResponse.name.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const matchesFarm = farmFilter === 'all' || field.farmName === farmFilter;
+      const matchesFarm = farmFilter === 'all' || field.name === farmFilter;
       const matchesCrop = cropFilter === 'all' || field.crop === cropFilter;
-      const matchesStatus = statusFilter === 'all' || field.status === statusFilter;
+      // const matchesStatus = statusFilter === 'all' || field.status === statusFilter;
       
-      return matchesSearch && matchesFarm && matchesCrop && matchesStatus;
+      return matchesSearch && matchesFarm && matchesCrop ;
     });
 
     return filtered.sort((a, b) => {
@@ -142,42 +142,7 @@ const FieldManagement: React.FC = () => {
       return 0;
     });
   }, [fields, searchTerm, sortField, sortDirection, farmFilter, cropFilter, statusFilter]);
-
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      active: 'bg-pesiraEmerald100 text-emerald-800 border-emerald-200',
-      fallow: 'bg-pesiraAmber100 text-amber-800 border-amber-200',
-      preparing: 'bg-pesiraBlue100 text-blue-800 border-blue-200'
-    };
-    
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status as keyof typeof styles]}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
-  };
-
-  const getCertificationBadge = (status: string) => {
-    const styles = {
-      certified: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-      'in-progress': 'bg-pesiraAmber100 text-amber-800 border-amber-200',
-      'not-certified': 'bg-red-100 text-red-800 border-red-200'
-    };
-    
-    const labels = {
-      certified: 'Certified',
-      'in-progress': 'In Progress',
-      'not-certified': 'Not Certified'
-    };
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status as keyof typeof styles]}`}>
-        {labels[status as keyof typeof labels]}
-      </span>
-    );
-  };
-
-  return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -198,7 +163,7 @@ const FieldManagement: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <input
                         type="text"
-                        name="Name"
+                        name="name"
                         value={newField.name}
                         onChange={handleInputChange}
                         placeholder="Name"
@@ -207,7 +172,7 @@ const FieldManagement: React.FC = () => {
                     />
                     <input
                         type="text"
-                        name="Crop"
+                        name="crop"
                         value={newField.crop}
                         onChange={handleInputChange}
                         placeholder="Crop"
@@ -225,7 +190,7 @@ const FieldManagement: React.FC = () => {
                         className="border rounded-md px-3 py-2"
                     />
                     <select
-                        name="farmerId"
+                        name="farmId"
                         value={newField.farmId}
                         onChange={handleInputChange}
                         required
@@ -246,6 +211,13 @@ const FieldManagement: React.FC = () => {
                     Submit
                 </button>
             </form>
+        )}
+
+        {/* Response */}
+        {responseMsg && (
+            <div className="p-3 rounded-md bg-gray-100 text-sm text-gray-700">
+                {responseMsg}
+            </div>
         )}
 
       {/* Stats Cards */}
@@ -270,7 +242,7 @@ const FieldManagement: React.FC = () => {
             <div className="ml-3">
               <p className="text-sm font-medium text-pesiraGray600">Active Fields</p>
               <p className="text-xl font-bold text-pesiraGray900">
-                {fields.filter(f => f.status === 'active').length}
+                {/*{fields.filter(f => f.status === 'active').length}*/}
               </p>
             </div>
           </div>
@@ -284,7 +256,7 @@ const FieldManagement: React.FC = () => {
             <div className="ml-3">
               <p className="text-sm font-medium text-pesiraGray600">Certified</p>
               <p className="text-xl font-bold text-pesiraGray900">
-                {fields.filter(f => f.certificationStatus === 'certified').length}
+                {/*{fields.filter(f => f.certificationStatus === 'certified').length}*/}
               </p>
             </div>
           </div>
@@ -329,7 +301,7 @@ const FieldManagement: React.FC = () => {
             >
               <option value="all">All Farms</option>
               {farms.map(farm => (
-                <option key={farm} value={farm}>{farm}</option>
+                <option key={farm.id} value={farm.id}>{farm.farmName}</option>
               ))}
             </select>
             <select
@@ -364,7 +336,7 @@ const FieldManagement: React.FC = () => {
               <tr>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort('fieldName')}
+                  onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center space-x-1">
                     <span>Field Name</span>
@@ -373,7 +345,7 @@ const FieldManagement: React.FC = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort('farmName')}
+                  onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center space-x-1">
                     <span>Farm</span>
@@ -398,15 +370,15 @@ const FieldManagement: React.FC = () => {
                     <ArrowUpDown className="h-3 w-3" />
                   </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
-                  Certification
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
-                  Last Inspection
-                </th>
+                  <th
+                      className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => handleSort('farmResponse')}
+                  >
+                      <div className="flex items-center space-x-1">
+                          <span>Location</span>
+                          <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                  </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -421,14 +393,14 @@ const FieldManagement: React.FC = () => {
                         <MapPin className="h-4 w-4 text-white" />
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-pesiraGray900">{field.fieldName}</div>
-                        <div className="text-sm text-pesiraGray500">{field.farmer}</div>
+                        <div className="text-sm font-medium text-pesiraGray900">{field.name}</div>
+                        <div className="text-sm text-pesiraGray500">{field.farmResponse.farmerResponse.name}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-pesiraGray900">{field.farmName}</div>
-                    <div className="text-sm text-pesiraGray500">{field.county}</div>
+                    <div className="text-sm text-pesiraGray900">{field.farmResponse.farmName}</div>
+                    <div className="text-sm text-pesiraGray500">{field.farmResponse.location}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-pesiraGray900">
@@ -438,18 +410,6 @@ const FieldManagement: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-pesiraGray900">
                     {field.areaHa}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(field.status)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getCertificationBadge(field.certificationStatus)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-pesiraGray900">
-                    <div className="flex items-center">
-                      <Calendar className="h-3 w-3 text-pesiraGray400 mr-1" />
-                      {new Date(field.lastInspection).toLocaleDateString()}
-                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-1">
