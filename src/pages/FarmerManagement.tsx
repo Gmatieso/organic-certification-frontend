@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, {useState, useMemo, useEffect} from 'react';
 import { Search, Plus, User, Phone, Mail, MapPin, Edit, Eye, Filter, ArrowUpDown } from 'lucide-react';
 
 interface Farmer {
@@ -31,74 +31,21 @@ const FarmerManagement: React.FC = () => {
 
   const [responseMsg, setResponseMsg] = useState<string | null>(null);
 
-  const farmers: Farmer[] = [
-    {
-      id: 1,
-      name: 'John Kamau',
-      phone: '+254 712 345 678',
-      email: 'john.kamau@email.com',
-      county: 'Kiambu',
-      farmCount: 2,
-      status: 'active',
-      registrationDate: '2023-01-15',
-      totalArea: 45.5
-    },
-    {
-      id: 2,
-      name: 'Mary Wanjiku',
-      phone: '+254 723 456 789',
-      email: 'mary.wanjiku@email.com',
-      county: 'Nakuru',
-      farmCount: 1,
-      status: 'active',
-      registrationDate: '2023-02-20',
-      totalArea: 35.2
-    },
-    {
-      id: 3,
-      name: 'David Mwangi',
-      phone: '+254 734 567 890',
-      email: 'david.mwangi@email.com',
-      county: 'Nyeri',
-      farmCount: 3,
-      status: 'active',
-      registrationDate: '2023-03-10',
-      totalArea: 180.8
-    },
-    {
-      id: 4,
-      name: 'Grace Njeri',
-      phone: '+254 745 678 901',
-      email: 'grace.njeri@email.com',
-      county: 'Meru',
-      farmCount: 1,
-      status: 'pending',
-      registrationDate: '2024-01-05',
-      totalArea: 25.3
-    },
-    {
-      id: 5,
-      name: 'Peter Kipchoge',
-      phone: '+254 756 789 012',
-      email: 'peter.kipchoge@email.com',
-      county: 'Uasin Gishu',
-      farmCount: 2,
-      status: 'active',
-      registrationDate: '2023-05-12',
-      totalArea: 250.0
-    },
-    {
-      id: 6,
-      name: 'Susan Mutua',
-      phone: '+254 767 890 123',
-      email: 'susan.mutua@email.com',
-      county: 'Machakos',
-      farmCount: 1,
-      status: 'inactive',
-      registrationDate: '2023-08-30',
-      totalArea: 80.7
-    }
-  ];
+  const [farmers, setFarmers] = useState<Farmer[]>([]);
+
+  useEffect(() => {
+      fetch('https://organic-certification-production.up.railway.app/api/v1/farmer')
+      .then(response => response.json())
+      .then(json => {
+          if(json.data && json.data.content){
+              setFarmers(json.data.content);
+          }
+      })
+      .catch(error => {
+        console.error('Error fetching farmers:', error);
+      });
+  })
+
 
   const counties = [...new Set(farmers.map(farmer => farmer.county))].sort();
 
@@ -141,21 +88,6 @@ const FarmerManagement: React.FC = () => {
       return 0;
     });
   }, [farmers, searchTerm, sortField, sortDirection, statusFilter, countyFilter]);
-
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      active: 'bg-pesiraEmerald100 text-emerald-800 border-pesiraEmerald200',
-      pending: 'bg-pesiraAmber100 text-amber-800 border-amber-200',
-      inactive: 'bg-pesiraGray100 text-gray-800 border-pesiraGray200'
-    };
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status as keyof typeof styles]}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
-  };
-
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setNewFarmer(prev => ({ ...prev, [name]: value }));
@@ -356,118 +288,92 @@ const FarmerManagement: React.FC = () => {
 
       {/* Farmers Table */}
       <div className="bg-pesiraWhite rounded-lg shadow-sm border border-pesiraGray200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-pesiraGray200">
-            <thead className="bg-pesiraGray50">
-              <tr>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-pesiraGray100 transition-colors"
-                  onClick={() => handleSort('name')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>Farmer</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
-                  Contact Information
-                </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-pesiraGray100 transition-colors"
-                  onClick={() => handleSort('county')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>County</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </div>
-                </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-pesiraGray100 transition-colors"
-                  onClick={() => handleSort('farmCount')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>Farms</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </div>
-                </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-pesiraGray100 transition-colors"
-                  onClick={() => handleSort('totalArea')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>Total Area (Ha)</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-pesiraWhite divide-y divide-pesiraGray200">
-              {filteredAndSortedFarmers.map((farmer) => (
-                <tr key={farmer.id} className="hover:bg-pesiraGray50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald rounded-full flex items-center justify-center">
-                        <User className="h-5 w-5 text-pesiraWhite" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-pesiraGray900">{farmer.name}</div>
-                        <div className="text-sm text-pesiraGray500">
-                          Registered: {new Date(farmer.registrationDate).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-pesiraGray900 space-y-1">
-                      <div className="flex items-center">
-                        <Phone className="h-3 w-3 text-pesiraGray400 mr-1" />
-                        <span>{farmer.phone}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Mail className="h-3 w-3 text-pesiraGray400 mr-1" />
-                        <span>{farmer.email}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-pesiraGray900">
-                      <MapPin className="h-3 w-3 text-pesiraGray400 mr-1" />
-                      {farmer.county}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-pesiraGray900">
-                    {farmer.farmCount}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-pesiraGray900">
-                    {farmer.totalArea}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(farmer.status)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-pesiraBlue600 bg-pesiraBlue100 hover:bg-pesiraBlue200 transition-colors">
-                        <Eye className="h-3 w-3 mr-1" />
-                        View
-                      </button>
-                      <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-pesiraEmerald600 bg-pesiraEmerald100 hover:bg-pesiraEmerald200 transition-colors">
-                        <Edit className="h-3 w-3 mr-1" />
-                        Edit
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
+          <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-pesiraGray200">
+                  <thead className="bg-pesiraGray50">
+                  <tr>
+                      <th
+                          className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-pesiraGray100 transition-colors"
+                          onClick={() => handleSort('name')}
+                      >
+                          <div className="flex items-center space-x-1">
+                              <span>Farmer</span>
+                              <ArrowUpDown className="h-3 w-3" />
+                          </div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
+                          Contact Information
+                      </th>
+                      <th
+                          className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-pesiraGray100 transition-colors"
+                          onClick={() => handleSort('county')}
+                      >
+                          <div className="flex items-center space-x-1">
+                              <span>County</span>
+                              <ArrowUpDown className="h-3 w-3" />
+                          </div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
+                          Actions
+                      </th>
+                  </tr>
+                  </thead>
+                  <tbody className="bg-pesiraWhite divide-y divide-pesiraGray200">
+                  {filteredAndSortedFarmers.map((farmer) => (
+                      <tr key={farmer.id} className="hover:bg-pesiraGray50 transition-colors">
+                          {/* Farmer name */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                  <div className="h-10 w-10 bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald rounded-full flex items-center justify-center">
+                                      <User className="h-5 w-5 text-pesiraWhite" />
+                                  </div>
+                                  <div className="ml-4">
+                                      <div className="text-sm font-medium text-pesiraGray900">{farmer.name}</div>
+                                  </div>
+                              </div>
+                          </td>
+
+                          {/* Contact Info */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-pesiraGray900 space-y-1">
+                                  <div className="flex items-center">
+                                      <Phone className="h-3 w-3 text-pesiraGray400 mr-1" />
+                                      <span>{farmer.phone}</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                      <Mail className="h-3 w-3 text-pesiraGray400 mr-1" />
+                                      <span>{farmer.email}</span>
+                                  </div>
+                              </div>
+                          </td>
+
+                          {/* County */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center text-sm text-pesiraGray900">
+                                  <MapPin className="h-3 w-3 text-pesiraGray400 mr-1" />
+                                  {farmer.county}
+                              </div>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex space-x-2">
+                                  <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-pesiraBlue600 bg-pesiraBlue100 hover:bg-pesiraBlue200 transition-colors">
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      View
+                                  </button>
+                                  <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-pesiraEmerald600 bg-pesiraEmerald100 hover:bg-pesiraEmerald200 transition-colors">
+                                      <Edit className="h-3 w-3 mr-1" />
+                                      Edit
+                                  </button>
+                              </div>
+                          </td>
+                      </tr>
+                  ))}
+                  </tbody>
+              </table>
+          </div>
+
         {filteredAndSortedFarmers.length === 0 && (
           <div className="text-center py-12">
             <User className="mx-auto h-12 w-12 text-pesiraGray400" />
