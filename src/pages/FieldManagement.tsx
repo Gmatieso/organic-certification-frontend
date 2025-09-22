@@ -372,15 +372,6 @@ const FieldManagement: React.FC = () => {
                     <ArrowUpDown className="h-3 w-3" />
                   </div>
                 </th>
-                  <th
-                      className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort('farmResponse')}
-                  >
-                      <div className="flex items-center space-x-1">
-                          <span>Location</span>
-                          <ArrowUpDown className="h-3 w-3" />
-                      </div>
-                  </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -402,7 +393,7 @@ const FieldManagement: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-pesiraGray900">{field.farmResponse?.farmName}</div>
-                    <div className="text-sm text-pesiraGray500">{field.farmResponse?.location}</div>
+                    <div className="text-sm text-pesiraGray500">{field?.farmResponse?.location}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-pesiraGray900">
