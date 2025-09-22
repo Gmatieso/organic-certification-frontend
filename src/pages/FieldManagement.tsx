@@ -1,18 +1,30 @@
-import React, { useState, useMemo } from 'react';
+import React, {useState, useMemo, useEffect} from 'react';
 import { Search, Plus, MapPin, Wheat, Calendar, Filter, ArrowUpDown, Eye, Edit, History } from 'lucide-react';
 
-interface Field {
-  id: number;
-  fieldName: string;
+
+
+interface FarmerResponse {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  county: string;
+}
+
+interface FarmResponse {
+  id: string;
   farmName: string;
+  location: string;
+  areaHa: number;
+  farmerResponse: FarmerResponse;
+}
+
+interface Field {
+  id: string;
+  name: string;
   crop: string;
   areaHa: number;
-  farmer: string;
-  county: string;
-  status: 'active' | 'fallow' | 'preparing';
-  lastInspection: string;
-  nextInspection: string;
-  certificationStatus: 'certified' | 'in-progress' | 'not-certified';
+  farmResponse: FarmResponse;
 }
 
 const FieldManagement: React.FC = () => {
@@ -20,143 +32,74 @@ const FieldManagement: React.FC = () => {
   const [farmFilter, setFarmFilter] = useState<string>('all');
   const [cropFilter, setCropFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sortField, setSortField] = useState<keyof Field>('fieldName');
+  const [sortField, setSortField] = useState<keyof Field>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [farms, setFarms] = useState<FarmResponse[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [newField, setnewField] = useState({
+    name: '',
+    crop: '',
+    areaHa: '',
+    farmId: ''
+  })
 
-  const fields: Field[] = [
-    {
-      id: 1,
-      fieldName: 'North Field A',
-      farmName: 'Green Valley Farm',
-      crop: 'Coffee',
-      areaHa: 12.5,
-      farmer: 'John Kamau',
-      county: 'Kiambu',
-      status: 'active',
-      lastInspection: '2024-01-15',
-      nextInspection: '2024-04-15',
-      certificationStatus: 'certified'
-    },
-    {
-      id: 2,
-      fieldName: 'South Field B',
-      farmName: 'Green Valley Farm',
-      crop: 'Maize',
-      areaHa: 13.0,
-      farmer: 'John Kamau',
-      county: 'Kiambu',
-      status: 'active',
-      lastInspection: '2024-01-15',
-      nextInspection: '2024-04-15',
-      certificationStatus: 'certified'
-    },
-    {
-      id: 3,
-      fieldName: 'Organic Plot 1',
-      farmName: 'Sunrise Organic',
-      crop: 'Vegetables',
-      areaHa: 25.2,
-      farmer: 'Mary Wanjiku',
-      county: 'Nakuru',
-      status: 'active',
-      lastInspection: '2024-01-20',
-      nextInspection: '2024-04-20',
-      certificationStatus: 'certified'
-    },
-    {
-      id: 4,
-      fieldName: 'Coffee Estate Main',
-      farmName: 'Highland Coffee Estate',
-      crop: 'Coffee',
-      areaHa: 80.0,
-      farmer: 'David Mwangi',
-      county: 'Nyeri',
-      status: 'active',
-      lastInspection: '2023-12-10',
-      nextInspection: '2024-03-10',
-      certificationStatus: 'in-progress'
-    },
-    {
-      id: 5,
-      fieldName: 'Coffee Estate North',
-      farmName: 'Highland Coffee Estate',
-      crop: 'Coffee',
-      areaHa: 40.8,
-      farmer: 'David Mwangi',
-      county: 'Nyeri',
-      status: 'preparing',
-      lastInspection: '2023-12-10',
-      nextInspection: '2024-03-10',
-      certificationStatus: 'not-certified'
-    },
-    {
-      id: 6,
-      fieldName: 'Herb Garden 1',
-      farmName: 'Fresh Herbs Kenya',
-      crop: 'Herbs',
-      areaHa: 8.3,
-      farmer: 'Grace Njeri',
-      county: 'Meru',
-      status: 'active',
-      lastInspection: '2024-01-05',
-      nextInspection: '2024-04-05',
-      certificationStatus: 'certified'
-    },
-    {
-      id: 7,
-      fieldName: 'Herb Garden 2',
-      farmName: 'Fresh Herbs Kenya',
-      crop: 'Herbs',
-      areaHa: 7.0,
-      farmer: 'Grace Njeri',
-      county: 'Meru',
-      status: 'fallow',
-      lastInspection: '2024-01-05',
-      nextInspection: '2024-04-05',
-      certificationStatus: 'not-certified'
-    },
-    {
-      id: 8,
-      fieldName: 'Main Field',
-      farmName: 'Organic Maize Fields',
-      crop: 'Maize',
-      areaHa: 120.0,
-      farmer: 'Peter Kipchoge',
-      county: 'Uasin Gishu',
-      status: 'active',
-      lastInspection: '2024-01-12',
-      nextInspection: '2024-04-12',
-      certificationStatus: 'certified'
-    },
-    {
-      id: 9,
-      fieldName: 'Extension Field',
-      farmName: 'Organic Maize Fields',
-      crop: 'Sorghum',
-      areaHa: 80.0,
-      farmer: 'Peter Kipchoge',
-      county: 'Uasin Gishu',
-      status: 'active',
-      lastInspection: '2024-01-12',
-      nextInspection: '2024-04-12',
-      certificationStatus: 'certified'
-    },
-    {
-      id: 10,
-      fieldName: 'Tropical Garden',
-      farmName: 'Tropical Fruits Co.',
-      crop: 'Mixed Fruits',
-      areaHa: 80.7,
-      farmer: 'Susan Mutua',
-      county: 'Machakos',
-      status: 'fallow',
-      lastInspection: '2023-11-30',
-      nextInspection: '2024-02-28',
-      certificationStatus: 'not-certified'
+    const [responseMsg, setResponseMsg] = useState<string | null>(null);
+    const [fields, setFields] = useState<Field[]>([]);
+
+
+    useEffect(()=> {
+        fetch('https://organic-certification-production.up.railway.app/api/v1/fields')
+            .then(res => res.json())
+            .then(json => {
+                if(json.data && json.data.content) {
+                    setFields(json.data.content);
+                }
+            })
+            .catch(err => console.log('Error fetching fields:', err))
+    }, [])
+
+    useEffect(() => {
+        fetch('https://organic-certification-production.up.railway.app/api/v1/farm')
+            .then(res => res.json())
+            .then(json => {
+                if (json.data?.content) {
+                    setFarms(json.data.content);
+                }
+            })
+            .catch(err => console.error("Error fetching farms:", err));
+    }, []);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setnewField(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async(e:React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('https://organic-certification-production.up.railway.app/api/v1/fields', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ...newField,
+                    areaHa: newField.areaHa,
+                })
+            });
+            const data = await response.json();
+            setResponseMsg(`${data.message}`)
+            if (response.ok) {
+                setFields(prev => [...prev, data.data]);
+                setnewField({name: '', crop: '', areaHa: '', farmId: ''})
+                setShowForm(false);
+            }
+        }catch(error){
+            setResponseMsg(`❌ Network error: ${(error as Error).message}`);
+        }
     }
-  ];
 
-  const farms = [...new Set(fields.map(field => field.farmName))].sort();
+  // const farms = [...new Set(fields.map(field => fields.))].sort();
   const crops = [...new Set(fields.map(field => field.crop))].sort();
 
   const handleSort = (field: keyof Field) => {
@@ -170,16 +113,16 @@ const FieldManagement: React.FC = () => {
 
   const filteredAndSortedFields = useMemo(() => {
     const filtered = fields.filter(field => {
-      const matchesSearch = field.fieldName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           field.farmName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch = field.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           field.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            field.crop.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           field.farmer.toLowerCase().includes(searchTerm.toLowerCase());
+                           field.farmResponse.farmerResponse.name.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const matchesFarm = farmFilter === 'all' || field.farmName === farmFilter;
+      const matchesFarm = farmFilter === 'all' || field.name === farmFilter;
       const matchesCrop = cropFilter === 'all' || field.crop === cropFilter;
-      const matchesStatus = statusFilter === 'all' || field.status === statusFilter;
+      // const matchesStatus = statusFilter === 'all' || field.status === statusFilter;
       
-      return matchesSearch && matchesFarm && matchesCrop && matchesStatus;
+      return matchesSearch && matchesFarm && matchesCrop ;
     });
 
     return filtered.sort((a, b) => {
@@ -199,42 +142,7 @@ const FieldManagement: React.FC = () => {
       return 0;
     });
   }, [fields, searchTerm, sortField, sortDirection, farmFilter, cropFilter, statusFilter]);
-
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      active: 'bg-pesiraEmerald100 text-emerald-800 border-emerald-200',
-      fallow: 'bg-pesiraAmber100 text-amber-800 border-amber-200',
-      preparing: 'bg-pesiraBlue100 text-blue-800 border-blue-200'
-    };
-    
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status as keyof typeof styles]}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
-  };
-
-  const getCertificationBadge = (status: string) => {
-    const styles = {
-      certified: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-      'in-progress': 'bg-pesiraAmber100 text-amber-800 border-amber-200',
-      'not-certified': 'bg-red-100 text-red-800 border-red-200'
-    };
-    
-    const labels = {
-      certified: 'Certified',
-      'in-progress': 'In Progress',
-      'not-certified': 'Not Certified'
-    };
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status as keyof typeof styles]}`}>
-        {labels[status as keyof typeof labels]}
-      </span>
-    );
-  };
-
-  return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -242,11 +150,77 @@ const FieldManagement: React.FC = () => {
           <h1 className="text-2xl font-bold text-pesiraGray900">Field Management</h1>
           <p className="mt-1 text-sm text-pesiraGray600">Manage agricultural fields and their cultivation details</p>
         </div>
-        <button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-pesiraWhite bg-gradient-to-r from-pesiraGreen to-pesiraEmerald hover:from-pesiraGreen500 hover:to-pesiraEmerald700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pesiraGreen500 transition-colors">
+        <button
+            onClick={() => setShowForm(!showForm)}
+            className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-pesiraWhite bg-gradient-to-r from-pesiraGreen to-pesiraEmerald hover:from-pesiraGreen500 hover:to-pesiraEmerald700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pesiraGreen500 transition-colors">
           <Plus className="h-4 w-4 mr-2" />
           Add New Field
         </button>
       </div>
+
+        {/* Add Field Form */}
+        {showForm && (
+            <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg border shadow-md space-y-4">
+                <h2 className="text-lg font-semibold text-gray-800">New Field</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <input
+                        type="text"
+                        name="name"
+                        value={newField.name}
+                        onChange={handleInputChange}
+                        placeholder="Name"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                    <input
+                        type="text"
+                        name="crop"
+                        value={newField.crop}
+                        onChange={handleInputChange}
+                        placeholder="Crop"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="areaHa"
+                        value={newField.areaHa}
+                        onChange={handleInputChange}
+                        placeholder="Area (Ha)"
+                        required
+                        className="border rounded-md px-3 py-2"
+                    />
+                    <select
+                        name="farmId"
+                        value={newField.farmId}
+                        onChange={handleInputChange}
+                        required
+                        className="border rounded-md px-3 py-2"
+                    >
+                        <option value="">Select Farm</option>
+                        {farms.map(farm => (
+                            <option key={farm.id} value={farm.id}>
+                                {farm.farmName} ({farm.location})
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <button
+                    type="submit"
+                    className="px-4 py-2 bg-pesiraGreen text-white rounded-md hover:bg-pesiraEmerald"
+                >
+                    Submit
+                </button>
+            </form>
+        )}
+
+        {/* Response */}
+        {responseMsg && (
+            <div className="p-3 rounded-md bg-gray-100 text-sm text-gray-700">
+                {responseMsg}
+            </div>
+        )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -270,7 +244,7 @@ const FieldManagement: React.FC = () => {
             <div className="ml-3">
               <p className="text-sm font-medium text-pesiraGray600">Active Fields</p>
               <p className="text-xl font-bold text-pesiraGray900">
-                {fields.filter(f => f.status === 'active').length}
+                {/*{fields.filter(f => f.status === 'active').length}*/}
               </p>
             </div>
           </div>
@@ -284,7 +258,7 @@ const FieldManagement: React.FC = () => {
             <div className="ml-3">
               <p className="text-sm font-medium text-pesiraGray600">Certified</p>
               <p className="text-xl font-bold text-pesiraGray900">
-                {fields.filter(f => f.certificationStatus === 'certified').length}
+                {/*{fields.filter(f => f.certificationStatus === 'certified').length}*/}
               </p>
             </div>
           </div>
@@ -329,7 +303,7 @@ const FieldManagement: React.FC = () => {
             >
               <option value="all">All Farms</option>
               {farms.map(farm => (
-                <option key={farm} value={farm}>{farm}</option>
+                <option key={farm.id} value={farm.id}>{farm.farmName}</option>
               ))}
             </select>
             <select
@@ -364,7 +338,7 @@ const FieldManagement: React.FC = () => {
               <tr>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort('fieldName')}
+                  onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center space-x-1">
                     <span>Field Name</span>
@@ -373,7 +347,7 @@ const FieldManagement: React.FC = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort('farmName')}
+                  onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center space-x-1">
                     <span>Farm</span>
@@ -398,15 +372,15 @@ const FieldManagement: React.FC = () => {
                     <ArrowUpDown className="h-3 w-3" />
                   </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
-                  Certification
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
-                  Last Inspection
-                </th>
+                  <th
+                      className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => handleSort('farmResponse')}
+                  >
+                      <div className="flex items-center space-x-1">
+                          <span>Location</span>
+                          <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                  </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -421,14 +395,14 @@ const FieldManagement: React.FC = () => {
                         <MapPin className="h-4 w-4 text-white" />
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-pesiraGray900">{field.fieldName}</div>
-                        <div className="text-sm text-pesiraGray500">{field.farmer}</div>
+                        <div className="text-sm font-medium text-pesiraGray900">{field.name}</div>
+                        <div className="text-sm text-pesiraGray500">{field.farmResponse?.farmerResponse?.name}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-pesiraGray900">{field.farmName}</div>
-                    <div className="text-sm text-pesiraGray500">{field.county}</div>
+                    <div className="text-sm text-pesiraGray900">{field.farmResponse?.farmName}</div>
+                    <div className="text-sm text-pesiraGray500">{field.farmResponse?.location}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-pesiraGray900">
@@ -438,18 +412,6 @@ const FieldManagement: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-pesiraGray900">
                     {field.areaHa}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(field.status)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getCertificationBadge(field.certificationStatus)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-pesiraGray900">
-                    <div className="flex items-center">
-                      <Calendar className="h-3 w-3 text-pesiraGray400 mr-1" />
-                      {new Date(field.lastInspection).toLocaleDateString()}
-                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-1">
