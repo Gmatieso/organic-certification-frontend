@@ -84,16 +84,15 @@ const FieldManagement: React.FC = () => {
                 },
                 body: JSON.stringify({
                     ...newField,
-                    areaHa: parseInt(newField.areaHa),
+                    areaHa: newField.areaHa,
                 })
             });
             const data = await response.json();
             setResponseMsg(`${data.message}`)
             if (response.ok) {
-                setResponseMsg(`${data.message}`)
-                setnewField({fieldName: '', crop: '', areaHa: 0, farmId: ''})
-                setShowForm(false);
                 setFields(prev => [...prev, data.data]);
+                setnewField({name: '', crop: '', areaHa: 0, farmId: ''})
+                setShowForm(false);
             }
         }catch(error){
             setResponseMsg(`❌ Network error: ${(error as Error).message}`);
