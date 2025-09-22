@@ -32,12 +32,12 @@ const FieldManagement: React.FC = () => {
   const [farmFilter, setFarmFilter] = useState<string>('all');
   const [cropFilter, setCropFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sortField, setSortField] = useState<keyof Field>('fieldName');
+  const [sortField, setSortField] = useState<keyof Field>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [farm, setFarm] = useState<FarmResponse | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [newField, setnewField] = useState({
-    fieldName: '',
+    name: '',
     crop: '',
     areaHa: 0,
     farmId: ''
