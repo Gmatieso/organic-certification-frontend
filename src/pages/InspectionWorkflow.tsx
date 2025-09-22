@@ -294,7 +294,22 @@ const InspectionWorkflow: React.FC = () => {
           placeholder="Enter recommendations for improvement..."
         />
       </div>
+        <div className="flex justify-end mt-6">
+            <button
+                onClick={updateInspection}
+                disabled={!inspectionId}
+                className={`px-4 py-2 rounded-md text-sm font-medium text-white transition-colors ${
+                    inspectionId
+                        ? 'bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald hover:from-pesiraGreen500 hover:to-emerald-700'
+                        : 'bg-pesiraGray400 cursor-not-allowed'
+                }`}
+            >
+                Save Draft
+            </button>
+        </div>
+
     </div>
+
   );
 
   const renderSummary = () => (
