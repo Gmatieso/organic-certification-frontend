@@ -199,10 +199,10 @@ const FieldManagement: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <input
                         type="text"
-                        name="fieldName"
-                        value={newField.fieldName}
+                        name="Name"
+                        value={newField.name}
                         onChange={handleInputChange}
-                        placeholder="Field Name"
+                        placeholder="Name"
                         required
                         className="border rounded-md px-3 py-2"
                     />
@@ -235,7 +235,7 @@ const FieldManagement: React.FC = () => {
                         <option value="">Select Farm</option>
                         {farms.map(farm => (
                             <option key={farm.id} value={farm.id}>
-                                {farm.name}
+                                {farm.farmName} ({farm.location})
                             </option>
                         ))}
                     </select>
