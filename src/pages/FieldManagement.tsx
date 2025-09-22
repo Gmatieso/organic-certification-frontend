@@ -345,7 +345,7 @@ const FieldManagement: React.FC = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-pesiraGray500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort('name')}
+                  onClick={() => handleSort('namefi')}
                 >
                   <div className="flex items-center space-x-1">
                     <span>Farm</span>
@@ -394,13 +394,13 @@ const FieldManagement: React.FC = () => {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-pesiraGray900">{field.name}</div>
-                        <div className="text-sm text-pesiraGray500">{field.farmResponse.farmerResponse.name}</div>
+                        <div className="text-sm text-pesiraGray500">{field.farmResponse?.farmerResponse?.name}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-pesiraGray900">{field.farmResponse.farmName}</div>
-                    <div className="text-sm text-pesiraGray500">{field.farmResponse.location}</div>
+                    <div className="text-sm text-pesiraGray900">{field.farmResponse?.farmName}</div>
+                    <div className="text-sm text-pesiraGray500">{field.farmResponse?.location}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-pesiraGray900">
