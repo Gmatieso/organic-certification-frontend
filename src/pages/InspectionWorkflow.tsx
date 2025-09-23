@@ -20,17 +20,25 @@ import {
  * 4. Summary / success
  */
 
-type Farm = {
+interface FarmerResponse {
     id: string;
     name: string;
+    phone: string;
+    email: string;
+    county: string;
+}
+
+interface Farm  {
+    id: string;
+    farmName: string;
     location?: string;
-    owner?: string;
+    farmerResponse: FarmerResponse;
 };
 
-type ChecklistItem = {
+interface ChecklistItem  {
     id: string;
     question: string;
-    answer: boolean | null; // true = yes, false = no, null = unanswered
+    answer: boolean | null;
 };
 
 const InspectionWorkflow: React.FC = () => {
@@ -110,19 +118,32 @@ const InspectionWorkflow: React.FC = () => {
     // 2) Save inspector details and fetch checklist
     const saveInspectorAndLoadChecklist = async () => {
         setMessage(null);
+        let id = inspectionId;
 
-        if (!inspectionId) {
-            // If for any reason inspectionId wasn't created, attempt to create one now:
-            if (!selectedFarm) {
-                setMessage("No farm selected");
-                return;
-            }
-            await initiateInspectionForSelectedFarm();
-            if (!inspectionId) {
-                // try reading again after create (it might have been set by create call)
-                // but avoid infinite loop; if still missing, warn user and continue
-                console.warn("inspectionId missing after create");
-            }
+        // If inspectionId not ready, create one
+        if (!id && selectedFarm) {
+            const res = await fetch("https://organic-certification-production.up.railway.app/api/v1/inspection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ farmId: selectedFarm.id }),
+            });
+            const json = await res.json();
+            id = json?.data?.inspectionId ?? json?.data?.id;
+            setInspectionId(id);
+        }
+
+        // PATCH with inspector details
+        try {
+            await fetch(`https://organic-certification-production.up.railway.app/api/v1/inspection/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    inspectorName,
+                    date: inspectionDate,
+                }),
+            });
+        } catch (err) {
+            console.error(err);
         }
 
         // PATCH inspection with inspector details (if inspectionId exists)
@@ -314,9 +335,9 @@ const InspectionWorkflow: React.FC = () => {
                         }`}
                     >
                         <div>
-                            <h3 className="text-sm font-medium text-pesiraGray900">{f.name}</h3>
+                            <h3 className="text-sm font-medium text-pesiraGray900">{f.farmName}</h3>
                             <p className="mt-1 text-sm text-pesiraGray500">{f.location}</p>
-                            {f.owner && <p className="text-sm text-pesiraGray500">Owner: {f.owner}</p>}
+                            {f.farmerResponse && <p className="text-sm text-pesiraGray500">Owner: {f.farmerResponse.name}</p>}
                         </div>
                     </div>
                 ))}
@@ -422,7 +443,7 @@ const InspectionWorkflow: React.FC = () => {
             </div>
 
             <div className="bg-pesiraGray50 p-4 rounded">
-                <p><strong>Farm:</strong> {selectedFarm?.name}</p>
+                <p><strong>Farm:</strong> {selectedFarm?.farmName}</p>
                 <p><strong>Inspection ID:</strong> {inspectionId ?? "—"}</p>
                 <p><strong>Inspector:</strong> {inspectorName}</p>
                 <p><strong>Date:</strong> {inspectionDate}</p>
