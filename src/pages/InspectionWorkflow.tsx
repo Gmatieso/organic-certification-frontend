@@ -8,252 +8,315 @@ import {
     FileText,
 } from "lucide-react";
 
-interface Farm {
-    id: string; // UUID from API
+/**
+ * InspectionWorkflow
+ *
+ * Steps:
+ * 1. Select Farm -> POST /api/v1/inspection  (creates inspection and returns inspectionId)
+ * 2. Inspector details (inspectorName + date) -> PATCH /api/v1/inspection/{inspectionId}
+ *    then GET checklist -> GET /api/v1/checklists/inspection/{inspectionId}
+ * 3. Answer checklist -> POST /api/v1/checklists/answers  (array of { checklistId, answer })
+ *    then complete inspection -> POST /api/v1/inspection/{inspectionId}/complete
+ * 4. Summary / success
+ */
+
+type Farm = {
+    id: string;
     name: string;
-    location: string;
-    owner: string;
-}
+    location?: string;
+    owner?: string;
+};
+
+type ChecklistItem = {
+    id: string;
+    question: string;
+    answer: boolean | null; // true = yes, false = no, null = unanswered
+};
 
 const InspectionWorkflow: React.FC = () => {
     const [currentStep, setCurrentStep] = useState<number>(1);
-    const [selectedFarm, setSelectedFarm] = useState<Farm | null>(null);
     const [farms, setFarms] = useState<Farm[]>([]);
+    const [selectedFarm, setSelectedFarm] = useState<Farm | null>(null);
     const [inspectionId, setInspectionId] = useState<string | null>(null);
-    const [isInitiating, setIsInitiating] = useState<boolean>(false);
 
-    const [inspectionData, setInspectionData] = useState({
-        inspector: "",
-        date: "",
-        soilQuality: "",
-        cropHealth: "",
-        pestManagement: "",
-        waterManagement: "",
-        recordKeeping: "",
-        compliance: "",
-        notes: "",
-        recommendations: "",
-    });
+    const [inspectorName, setInspectorName] = useState<string>("");
+    const [inspectionDate, setInspectionDate] = useState<string>("");
 
+    const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [message, setMessage] = useState<string | null>(null);
+
+    // fetch farms on mount
     useEffect(() => {
+        setLoading(true);
         fetch("https://organic-certification-production.up.railway.app/api/v1/farm")
             .then((res) => res.json())
             .then((json) => {
-                if (json.data && json.data.content) {
+                if (json?.data?.content) {
+                    // adapt shape if necessary
                     setFarms(json.data.content);
+                } else {
+                    setFarms([]);
                 }
             })
-            .catch((err) => console.log("Error fetching farms:", err));
+            .catch((err) => {
+                console.error("Error fetching farms:", err);
+                setMessage("Failed to load farms.");
+            })
+            .finally(() => setLoading(false));
     }, []);
 
-    // wrapper for Next button
-    const handleNext = async () => {
-        if (currentStep === 1) {
-            // Need a selected farm first
-            if (!selectedFarm) return;
+    // Step helpers
+    const goPrev = () => setCurrentStep((s) => Math.max(1, s - 1));
+    const goTo = (step: number) => setCurrentStep(step);
 
-            // set loading
-            setIsInitiating(true);
-
-            try {
-                // initiate inspection POST
-                const res = await fetch(
-                    "https://organic-certification-production.up.railway.app/api/v1/inspection",
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ farmId: selectedFarm.id }),
-                    }
-                );
-
-                const json = await res.json();
-                // if backend returns inspection id, keep it
-                if (json?.data?.inspectionId) {
-                    setInspectionId(json.data.inspectionId);
-                } else {
-                    // optional: you may log or notify if backend didn't return id
-                    console.warn("No inspectionId in response", json);
-                }
-
-                // advance to step 2 whether or not we got an id (so UX isn't blocked)
-                setCurrentStep(2);
-            } catch (err) {
-                console.error("Failed to initiate inspection", err);
-                // Advance anyway so user can fill details (adjust if you prefer blocking)
-                setCurrentStep(2);
-            } finally {
-                setIsInitiating(false);
-            }
-        } else {
-            // step 2 -> step 3 simply advance
-            setCurrentStep((s) => Math.min(3, s + 1));
-        }
-    };
-
-    const updateInspection = async () => {
-        if (!inspectionId) {
-            alert("No inspection created yet. Click Next to initiate an inspection first.");
-            return;
-        }
+    // 1) Create inspection when pressing Next on farm selection
+    const initiateInspectionForSelectedFarm = async () => {
+        if (!selectedFarm) return;
+        setLoading(true);
+        setMessage(null);
 
         try {
             const res = await fetch(
-                `https://organic-certification-production.up.railway.app/api/v1/inspection/${inspectionId}`,
+                "https://organic-certification-production.up.railway.app/api/v1/inspection",
                 {
-                    method: "PATCH",
+                    method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(inspectionData),
+                    body: JSON.stringify({ farmId: selectedFarm.id }),
                 }
             );
 
             const json = await res.json();
-            console.log("Updated inspection:", json);
-            alert("Inspection details saved successfully!");
+            // backend might return inspectionId under json.data.inspectonId or similar - we use json.data.inspectionId as you described earlier
+            const id = json?.data?.inspectionId ?? json?.data?.id ?? null;
+            if (!id) {
+                console.warn("No inspectionId returned from create inspection:", json);
+            } else {
+                setInspectionId(id);
+            }
+
+            // advance to inspector details step (step 2)
+            setCurrentStep(2);
         } catch (err) {
-            console.error("Failed to update inspection", err);
-            alert("Failed to save draft.");
+            console.error("Failed to create inspection:", err);
+            setMessage("Failed to initiate inspection — try again.");
+            // still allow moving to step 2 so user can fill details (optional)
+            setCurrentStep(2);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const finalizeInspection = async () => {
+    // 2) Save inspector details and fetch checklist
+    const saveInspectorAndLoadChecklist = async () => {
+        setMessage(null);
+
         if (!inspectionId) {
-            alert("No inspection created to finalize.");
+            // If for any reason inspectionId wasn't created, attempt to create one now:
+            if (!selectedFarm) {
+                setMessage("No farm selected");
+                return;
+            }
+            await initiateInspectionForSelectedFarm();
+            if (!inspectionId) {
+                // try reading again after create (it might have been set by create call)
+                // but avoid infinite loop; if still missing, warn user and continue
+                console.warn("inspectionId missing after create");
+            }
+        }
+
+        // PATCH inspection with inspector details (if inspectionId exists)
+        if (inspectionId) {
+            setLoading(true);
+            try {
+                const payload = {
+                    inspectorName: inspectorName,
+                    date: inspectionDate,
+                };
+
+                const res = await fetch(
+                    `https://organic-certification-production.up.railway.app/api/v1/inspection/${inspectionId}`,
+                    {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                    }
+                );
+
+                if (!res.ok) {
+                    console.warn("PATCH inspection returned non-OK", await res.text());
+                }
+            } catch (err) {
+                console.error("Failed to patch inspection:", err);
+                setMessage("Failed to save inspector details (saved locally).");
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // fetch checklist for this inspection
+        try {
+            setLoading(true);
+            const res = await fetch(
+                `https://organic-certification-production.up.railway.app/api/v1/checklists/inspection/${inspectionId}`
+            );
+            const json = await res.json();
+            // Expecting json.data to be an array as in your sample. Fallback if different.
+            const items = Array.isArray(json.data)
+                ? json.data
+                : json?.data?.content ?? json?.data ?? [];
+
+            const formatted: ChecklistItem[] = (items as any[]).map((it) => ({
+                id: it.id,
+                question: it.question ?? it.title ?? "Unknown question",
+                answer: null,
+            }));
+            setChecklist(formatted);
+
+            // advance to checklist step
+            setCurrentStep(3);
+        } catch (err) {
+            console.error("Failed to fetch checklist:", err);
+            setMessage("Failed to load checklist. You can try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Answer change
+    const setAnswer = (checklistId: string, answer: boolean) => {
+        setChecklist((prev) =>
+            prev.map((item) => (item.id === checklistId ? { ...item, answer } : item))
+        );
+    };
+
+    // 3) Submit answers and complete inspection
+    const submitAnswersAndComplete = async () => {
+        if (!inspectionId) {
+            setMessage("Missing inspection id.");
             return;
         }
 
+        // ensure all answered (optional)
+        const unanswered = checklist.filter((c) => c.answer === null);
+        if (unanswered.length > 0) {
+            const confirmProceed = window.confirm(
+                `There are ${unanswered.length} unanswered questions. Submit anyway?`
+            );
+            if (!confirmProceed) return;
+        }
+
+        // build answers payload expected by your API: array of { checklistId, answer }
+        const answersPayload = checklist.map((c) => ({
+            checklistId: c.id,
+            answer: !!c.answer,
+        }));
+
+        setLoading(true);
+        setMessage(null);
+
         try {
-            const response = await fetch(
-                `https://organic-certification-production.up.railway.app/api/v1/inspection/${inspectionId}/finalize`,
+            // post answers
+            const resAnswers = await fetch(
+                "https://organic-certification-production.up.railway.app/api/v1/checklists/answers",
                 {
-                    method: "PATCH",
+                    method: "POST",
                     headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(answersPayload),
                 }
             );
 
-            if (!response.ok) {
-                throw new Error("Failed to finalize inspection");
+            if (!resAnswers.ok) {
+                const text = await resAnswers.text();
+                console.warn("Answers POST failed:", text);
+                setMessage("Failed to submit answers.");
+                setLoading(false);
+                return;
             }
 
-            const result = await response.json();
-            console.log("Inspection finalized:", result);
+            // then complete inspection (endpoint you gave earlier was ..../complete)
+            const resComplete = await fetch(
+                `https://organic-certification-production.up.railway.app/api/v1/inspection/${inspectionId}/complete`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    // some backends expect answers in complete call too; sending same payload (safe)
+                    body: JSON.stringify(answersPayload),
+                }
+            );
 
-            alert("Inspection submitted successfully!");
+            if (!resComplete.ok) {
+                const text = await resComplete.text();
+                console.warn("Complete inspection failed:", text);
+                setMessage("Answers saved but failed to complete inspection.");
+                setLoading(false);
+                return;
+            }
 
-            // Reset wizard
-            setCurrentStep(1);
-            setSelectedFarm(null);
-            setInspectionId(null);
-            setInspectionData({
-                inspector: "",
-                date: "",
-                soilQuality: "",
-                cropHealth: "",
-                pestManagement: "",
-                waterManagement: "",
-                recordKeeping: "",
-                compliance: "",
-                notes: "",
-                recommendations: "",
-            });
+            // success
+            setMessage("Inspection submitted successfully.");
+            setCurrentStep(4);
         } catch (err) {
-            console.error(err);
-            alert("Error submitting inspection.");
+            console.error("Failed submitting answers / completing inspection:", err);
+            setMessage("Network error while submitting answers.");
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleInputChange = (field: string, value: string) => {
-        setInspectionData((prev) => ({ ...prev, [field]: value }));
-    };
-
-    const prevStep = () => {
-        if (currentStep > 1) setCurrentStep((s) => s - 1);
-    };
-
+    // UI render pieces
     const steps = [
         { id: 1, name: "Farm Selection", icon: MapPin },
-        { id: 2, name: "Inspection Details", icon: ClipboardCheck },
-        { id: 3, name: "Summary & Submit", icon: FileText },
+        { id: 2, name: "Inspector Details", icon: ClipboardCheck },
+        { id: 3, name: "Checklist", icon: Check },
+        { id: 4, name: "Summary", icon: FileText },
     ];
 
-    // ---- renderers ----
     const renderStepIndicator = () => (
-        <div className="mb-8">
-            <nav aria-label="Progress">
-                <ol className="flex items-center">
-                    {steps.map((step, stepIdx) => (
-                        <li
-                            key={step.id}
-                            className={`relative ${
-                                stepIdx !== steps.length - 1 ? "pr-8 sm:pr-20" : ""
-                            } flex-1`}
-                        >
-                            <div className="absolute inset-0 flex items-center">
-                                <div
-                                    className={`h-0.5 w-full ${
-                                        step.id < currentStep ? "bg-pesiraGreen" : "bg-pesiraGray200"
-                                    }`}
-                                />
-                            </div>
-                            <div
-                                className={`relative w-8 h-8 flex items-center justify-center rounded-full border-2 ${
-                                    step.id < currentStep
-                                        ? "bg-pesiraGreen border-pesiraGreen"
-                                        : step.id === currentStep
-                                            ? "border-pesiraGreen bg-white"
-                                            : "border-pesiraGray300 bg-white"
-                                }`}
-                            >
-                                {step.id < currentStep ? (
-                                    <Check className="h-4 w-4 text-white" />
-                                ) : (
-                                    <step.icon
-                                        className={`h-4 w-4 ${
-                                            step.id === currentStep ? "text-pesiraGreen" : "text-pesiraGray400"
-                                        }`}
-                                    />
-                                )}
-                            </div>
-                            <div className="mt-2">
-                <span className={`text-sm font-medium ${step.id <= currentStep ? "text-pesiraGreen" : "text-pesiraGray500"}`}>
-                  {step.name}
-                </span>
-                            </div>
-                        </li>
-                    ))}
-                </ol>
-            </nav>
-        </div>
+        <nav aria-label="Progress" className="mb-6">
+            <ol className="flex items-center">
+                {steps.map((s, idx) => (
+                    <li key={s.id} className={`flex-1 relative ${idx !== steps.length - 1 ? "pr-8 sm:pr-20" : ""}`}>
+                        <div className="absolute inset-0 flex items-center">
+                            <div className={`h-0.5 w-full ${s.id < currentStep ? "bg-pesiraGreen" : "bg-pesiraGray200"}`} />
+                        </div>
+                        <div className={`relative w-8 h-8 flex items-center justify-center rounded-full border-2 ${
+                            s.id < currentStep ? "bg-pesiraGreen border-pesiraGreen" : s.id === currentStep ? "border-pesiraGreen bg-white" : "border-pesiraGray300 bg-white"
+                        }`}>
+                            {s.id < currentStep ? <Check className="h-4 w-4 text-white" /> : <s.icon className={`h-4 w-4 ${s.id === currentStep ? "text-pesiraGreen" : "text-pesiraGray400"}`} />}
+                        </div>
+                        <div className="mt-2">
+                            <span className={`text-sm font-medium ${s.id <= currentStep ? "text-pesiraGreen" : "text-pesiraGray500"}`}>{s.name}</span>
+                        </div>
+                    </li>
+                ))}
+            </ol>
+        </nav>
     );
 
     const renderFarmSelection = () => (
         <div className="space-y-6">
             <div>
                 <h2 className="text-xl font-semibold text-pesiraGray900">Select Farm for Inspection</h2>
-                <p className="mt-1 text-sm text-pesiraGray600">Choose the farm you want to conduct an inspection for.</p>
+                <p className="mt-1 text-sm text-pesiraGray600">Choose the farm you want to inspect.</p>
             </div>
 
+            {loading && <div className="text-sm text-pesiraGray600">Loading farms...</div>}
+            {message && <div className="text-sm text-amber-700">{message}</div>}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {farms.map((farm) => (
+                {farms.map((f) => (
                     <div
-                        key={farm.id}
+                        key={f.id}
+                        onClick={() => setSelectedFarm(f)}
                         className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
-                            selectedFarm?.id === farm.id ? "border-pesiraGreen bg-blue-50" : "border-pesiraGray200 hover:border-pesiraGray300"
+                            selectedFarm?.id === f.id ? "border-pesiraGreen bg-blue-50" : "border-pesiraGray200 hover:border-pesiraGray300"
                         }`}
-                        onClick={() => setSelectedFarm(farm)}
                     >
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                                <h3 className="text-sm font-medium text-pesiraGray900">{farm.name}</h3>
-                                <p className="mt-1 text-sm text-pesiraGray500">{farm.location}</p>
-                                <p className="mt-1 text-sm text-pesiraGray500">Owner: {farm.owner}</p>
-                            </div>
-                            {selectedFarm?.id === farm.id && (
-                                <div className="ml-4">
-                                    <div className="w-5 h-5 bg-pesiraGreen rounded-full flex items-center justify-center">
-                                        <Check className="w-3 h-3 text-white" />
-                                    </div>
-                                </div>
-                            )}
+                        <div>
+                            <h3 className="text-sm font-medium text-pesiraGray900">{f.name}</h3>
+                            <p className="mt-1 text-sm text-pesiraGray500">{f.location}</p>
+                            {f.owner && <p className="text-sm text-pesiraGray500">Owner: {f.owner}</p>}
                         </div>
                     </div>
                 ))}
@@ -261,135 +324,92 @@ const InspectionWorkflow: React.FC = () => {
         </div>
     );
 
-    const renderInspectionDetails = () => (
+    const renderInspectorDetails = () => (
         <div className="space-y-6">
             <div>
-                <h2 className="text-xl font-semibold text-pesiraGray900">Inspection Details</h2>
-                <p className="mt-1 text-sm text-pesiraGray600">Fill in the inspection details for {selectedFarm?.name}.</p>
+                <h2 className="text-xl font-semibold text-pesiraGray900">Inspector Details</h2>
+                <p className="mt-1 text-sm text-pesiraGray600">Enter inspector name and the inspection date, then load the checklist.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label className="block text-sm font-medium text-pesiraGray700 mb-2">Inspector Name</label>
+                    <label className="block text-sm font-medium text-pesiraGray700 mb-2">Inspector name</label>
                     <input
-                        type="text"
-                        value={inspectionData.inspector}
-                        onChange={(e) => handleInputChange("inspector", e.target.value)}
-                        className="w-full border border-pesiraGray300 rounded-md px-3 py-2 focus:ring-2 focus:ring-pesiraGreen focus:border-transparent"
-                        placeholder="Enter inspector name"
+                        value={inspectorName}
+                        onChange={(e) => setInspectorName(e.target.value)}
+                        placeholder="e.g. Judith Njeri"
+                        className="w-full border rounded px-3 py-2"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-pesiraGray700 mb-2">Inspection Date</label>
+                    <label className="block text-sm font-medium text-pesiraGray700 mb-2">Inspection date</label>
                     <input
                         type="date"
-                        value={inspectionData.date}
-                        onChange={(e) => handleInputChange("date", e.target.value)}
-                        className="w-full border border-pesiraGray300 rounded-md px-3 py-2 focus:ring-2 focus:ring-pesiraGreen focus:border-transparent"
+                        value={inspectionDate}
+                        onChange={(e) => setInspectionDate(e.target.value)}
+                        className="w-full border rounded px-3 py-2"
                     />
                 </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-pesiraGray700 mb-2">Soil Quality</label>
-                    <select
-                        value={inspectionData.soilQuality}
-                        onChange={(e) => handleInputChange("soilQuality", e.target.value)}
-                        className="w-full border border-pesiraGray300 rounded-md px-3 py-2 focus:ring-2 focus:ring-pesiraGreen focus:border-transparent"
-                    >
-                        <option value="">Select rating</option>
-                        <option value="excellent">Excellent</option>
-                        <option value="good">Good</option>
-                        <option value="fair">Fair</option>
-                        <option value="poor">Poor</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-pesiraGray700 mb-2">Crop Health</label>
-                    <select
-                        value={inspectionData.cropHealth}
-                        onChange={(e) => handleInputChange("cropHealth", e.target.value)}
-                        className="w-full border border-pesiraGray300 rounded-md px-3 py-2 focus:ring-2 focus:ring-pesiraGreen focus:border-transparent"
-                    >
-                        <option value="">Select rating</option>
-                        <option value="excellent">Excellent</option>
-                        <option value="good">Good</option>
-                        <option value="fair">Fair</option>
-                        <option value="poor">Poor</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-pesiraGray700 mb-2">Pest Management</label>
-                    <select
-                        value={inspectionData.pestManagement}
-                        onChange={(e) => handleInputChange("pestManagement", e.target.value)}
-                        className="w-full border border-pesiraGray300 rounded-md px-3 py-2 focus:ring-2 focus:ring-pesiraGreen focus:border-transparent"
-                    >
-                        <option value="">Select compliance</option>
-                        <option value="compliant">Compliant</option>
-                        <option value="minor-issues">Minor Issues</option>
-                        <option value="non-compliant">Non-Compliant</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-pesiraGray700 mb-2">Water Management</label>
-                    <select
-                        value={inspectionData.waterManagement}
-                        onChange={(e) => handleInputChange("waterManagement", e.target.value)}
-                        className="w-full border border-pesiraGray300 rounded-md px-3 py-2 focus:ring-2 focus:ring-pesiraGreen focus:border-transparent"
-                    >
-                        <option value="">Select compliance</option>
-                        <option value="compliant">Compliant</option>
-                        <option value="minor-issues">Minor Issues</option>
-                        <option value="non-compliant">Non-Compliant</option>
-                    </select>
-                </div>
             </div>
 
-            <div>
-                <label className="block text-sm font-medium text-pesiraGray700 mb-2">Inspection Notes</label>
-                <textarea
-                    value={inspectionData.notes}
-                    onChange={(e) => handleInputChange("notes", e.target.value)}
-                    rows={4}
-                    className="w-full border border-pesiraGray300 rounded-md px-3 py-2 focus:ring-2 focus:ring-pesiraGreen focus:border-transparent"
-                    placeholder="Enter detailed inspection notes..."
-                />
-            </div>
-
-            <div>
-                <label className="block text-sm font-medium text-pesiraGray700 mb-2">Recommendations</label>
-                <textarea
-                    value={inspectionData.recommendations}
-                    onChange={(e) => handleInputChange("recommendations", e.target.value)}
-                    rows={3}
-                    className="w-full border border-pesiraGray300 rounded-md px-3 py-2 focus:ring-2 focus:ring-pesiraGreen focus:border-transparent"
-                    placeholder="Enter recommendations for improvement..."
-                />
-            </div>
-
-            <div className="flex justify-end mt-6 space-x-3">
+            <div className="flex justify-end space-x-3">
                 <button
-                    onClick={() => setCurrentStep(3)}
-                    className="px-4 py-2 rounded-md text-sm font-medium bg-pesiraGray200 hover:bg-pesiraGray300"
+                    onClick={() => setCurrentStep(1)}
+                    className="px-4 py-2 border rounded text-sm"
                 >
-                    Skip Save (Preview)
+                    Back
                 </button>
 
                 <button
-                    onClick={updateInspection}
-                    disabled={!inspectionId}
-                    className={`px-4 py-2 rounded-md text-sm font-medium text-white transition-colors ${
-                        inspectionId
-                            ? "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald hover:from-pesiraGreen500 hover:to-emerald-700"
-                            : "bg-pesiraGray400 cursor-not-allowed"
-                    }`}
+                    onClick={saveInspectorAndLoadChecklist}
+                    disabled={loading || !inspectorName || !inspectionDate}
+                    className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}
                 >
-                    Save Draft
+                    {loading ? "Loading..." : "Save & Load Checklist"}
                 </button>
+            </div>
+        </div>
+    );
+
+    const renderChecklistUI = () => (
+        <div className="space-y-6">
+            <div>
+                <h2 className="text-xl font-semibold text-pesiraGray900">Inspection Checklist</h2>
+                <p className="mt-1 text-sm text-pesiraGray600">Answer Yes or No for each question.</p>
+            </div>
+
+            <div className="space-y-3">
+                {checklist.map((it) => (
+                    <div key={it.id} className="flex items-center justify-between border rounded p-3">
+                        <div className="pr-4 text-sm text-pesiraGray800">{it.question}</div>
+                        <div className="flex items-center gap-3">
+                            <label className="inline-flex items-center">
+                                <input type="radio" name={`chk-${it.id}`} checked={it.answer === true} onChange={() => setAnswer(it.id, true)} />
+                                <span className="ml-2 text-sm">Yes</span>
+                            </label>
+                            <label className="inline-flex items-center">
+                                <input type="radio" name={`chk-${it.id}`} checked={it.answer === false} onChange={() => setAnswer(it.id, false)} />
+                                <span className="ml-2 text-sm">No</span>
+                            </label>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="flex justify-between items-center">
+                <button onClick={() => setCurrentStep(2)} className="px-4 py-2 border rounded text-sm">Back</button>
+
+                <div className="flex items-center gap-3">
+                    {message && <div className="text-sm text-amber-700">{message}</div>}
+                    <button
+                        onClick={submitAnswersAndComplete}
+                        disabled={loading}
+                        className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}
+                    >
+                        {loading ? "Submitting..." : "Submit Answers & Complete"}
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -397,57 +417,34 @@ const InspectionWorkflow: React.FC = () => {
     const renderSummary = () => (
         <div className="space-y-6">
             <div>
-                <h2 className="text-xl font-semibold text-pesiraGray900">Inspection Summary</h2>
-                <p className="mt-1 text-sm text-pesiraGray600">Review and submit the inspection details.</p>
+                <h2 className="text-xl font-semibold text-pesiraGray900">Done — Summary</h2>
+                <p className="mt-1 text-sm text-pesiraGray600">Inspection has been submitted.</p>
             </div>
 
-            <div className="bg-pesiraGray50 rounded-lg p-6 space-y-4">
-                <div>
-                    <h3 className="text-sm font-medium text-pesiraGray900">Farm Information</h3>
-                    <div className="mt-2 text-sm text-pesiraGray600">
-                        <p><strong>Farm:</strong> {selectedFarm?.name}</p>
-                        <p><strong>Location:</strong> {selectedFarm?.location}</p>
-                        <p><strong>Owner:</strong> {selectedFarm?.owner}</p>
-                    </div>
-                </div>
+            <div className="bg-pesiraGray50 p-4 rounded">
+                <p><strong>Farm:</strong> {selectedFarm?.name}</p>
+                <p><strong>Inspection ID:</strong> {inspectionId ?? "—"}</p>
+                <p><strong>Inspector:</strong> {inspectorName}</p>
+                <p><strong>Date:</strong> {inspectionDate}</p>
+                <p className="mt-2 text-sm text-pesiraGray700">{message ?? "Completed successfully."}</p>
+            </div>
 
-                <div>
-                    <h3 className="text-sm font-medium text-pesiraGray900">Inspection Details</h3>
-                    <div className="mt-2 text-sm text-pesiraGray600 grid grid-cols-2 gap-4">
-                        <p><strong>Inspector:</strong> {inspectionData.inspector}</p>
-                        <p><strong>Date:</strong> {inspectionData.date}</p>
-                        <p><strong>Soil Quality:</strong> {inspectionData.soilQuality}</p>
-                        <p><strong>Crop Health:</strong> {inspectionData.cropHealth}</p>
-                        <p><strong>Pest Management:</strong> {inspectionData.pestManagement}</p>
-                        <p><strong>Water Management:</strong> {inspectionData.waterManagement}</p>
-                    </div>
-                </div>
-
-                {inspectionData.notes && (
-                    <div>
-                        <h3 className="text-sm font-medium text-pesiraGray900">Notes</h3>
-                        <p className="mt-2 text-sm text-pesiraGray600">{inspectionData.notes}</p>
-                    </div>
-                )}
-
-                {inspectionData.recommendations && (
-                    <div>
-                        <h3 className="text-sm font-medium text-pesiraGray900">Recommendations</h3>
-                        <p className="mt-2 text-sm text-pesiraGray600">{inspectionData.recommendations}</p>
-                    </div>
-                )}
-
-                <div className="pt-4 border-t">
-                    <button
-                        onClick={finalizeInspection}
-                        disabled={!inspectionId}
-                        className={`mt-2 px-6 py-2 rounded-md text-sm font-medium text-white ${
-                            inspectionId ? "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald" : "bg-pesiraGray400 cursor-not-allowed"
-                        }`}
-                    >
-                        Submit Inspection
-                    </button>
-                </div>
+            <div className="flex justify-end">
+                <button
+                    onClick={() => {
+                        // reset wizard
+                        setSelectedFarm(null);
+                        setInspectionId(null);
+                        setInspectorName("");
+                        setInspectionDate("");
+                        setChecklist([]);
+                        setMessage(null);
+                        setCurrentStep(1);
+                    }}
+                    className="px-4 py-2 rounded border"
+                >
+                    New Inspection
+                </button>
             </div>
         </div>
     );
@@ -456,48 +453,56 @@ const InspectionWorkflow: React.FC = () => {
         <div className="max-w-4xl mx-auto">
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-pesiraGray900">Inspection Workflow</h1>
-                <p className="mt-1 text-sm text-pesiraGray600">Conduct comprehensive farm inspections with guided workflow</p>
+                <p className="mt-1 text-sm text-pesiraGray600">Conduct inspections — select farm, add inspector, answer checklist, submit.</p>
             </div>
 
-            <div className="bg-pesiraWhite rounded-lg shadow-sm border border-pesiraGray200 p-8">
+            <div className="bg-pesiraWhite rounded-lg shadow-sm border p-6">
                 {renderStepIndicator()}
 
-                <div className="min-h-96">
+                <div className="min-h-[240px]">
                     {currentStep === 1 && renderFarmSelection()}
-                    {currentStep === 2 && renderInspectionDetails()}
-                    {currentStep === 3 && renderSummary()}
+                    {currentStep === 2 && renderInspectorDetails()}
+                    {currentStep === 3 && renderChecklistUI()}
+                    {currentStep === 4 && renderSummary()}
                 </div>
 
-                <div className="flex justify-between mt-8 pt-6 border-t border-pesiraGray200">
+                <div className="flex justify-between mt-6 pt-4 border-t">
                     <button
-                        onClick={prevStep}
+                        onClick={goPrev}
                         disabled={currentStep === 1}
-                        className={`inline-flex items-center px-4 py-2 border rounded-md text-sm font-medium transition-colors ${
-                            currentStep === 1 ? "border-pesiraGray300 text-pesiraGray400 cursor-not-allowed" : "border-pesiraGray300 text-pesiraGray700 bg-pesiraWhite hover:bg-pesiraGray50"
-                        }`}
+                        className="px-4 py-2 border rounded text-sm disabled:opacity-50"
                     >
-                        <ChevronLeft className="h-4 w-4 mr-2" />
+                        <ChevronLeft className="inline-block h-4 w-4 mr-2" />
                         Previous
                     </button>
 
-                    {currentStep < 3 ? (
+                    {currentStep === 1 ? (
                         <button
-                            onClick={handleNext}
-                            disabled={isInitiating || (currentStep === 1 && !selectedFarm)}
-                            className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-pesiraWhite transition-colors ${
-                                isInitiating ? "bg-pesiraGray400 cursor-not-allowed" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald hover:from-pesiraGreen500 hover:to-emerald-700"
-                            }`}
+                            onClick={initiateInspectionForSelectedFarm}
+                            disabled={!selectedFarm || loading}
+                            className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}
                         >
-                            {isInitiating ? "Initiating..." : "Next"}
-                            <ChevronRight className="h-4 w-4 ml-2" />
+                            {loading ? "Initiating..." : "Next"}
+                            <ChevronRight className="inline-block h-4 w-4 ml-2" />
+                        </button>
+                    ) : currentStep === 2 ? (
+                        <button
+                            onClick={saveInspectorAndLoadChecklist}
+                            disabled={!inspectorName || !inspectionDate || loading}
+                            className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}
+                        >
+                            {loading ? "Loading..." : "Save & Load Checklist"}
+                        </button>
+                    ) : currentStep === 3 ? (
+                        <button
+                            onClick={submitAnswersAndComplete}
+                            disabled={loading}
+                            className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}
+                        >
+                            {loading ? "Submitting..." : "Submit Answers"}
                         </button>
                     ) : (
-                        <button
-                            onClick={() => finalizeInspection()}
-                            className="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-pesiraWhite bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald hover:from-pesiraGreen500 hover:to-emerald-700 transition-colors"
-                        >
-                            Submit Inspection
-                        </button>
+                        <div /> /* step 4 - no right action here, summary shows New Inspection button */
                     )}
                 </div>
             </div>
