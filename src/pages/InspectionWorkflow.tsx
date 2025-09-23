@@ -8,18 +8,6 @@ import {
     FileText,
 } from "lucide-react";
 
-/**
- * InspectionWorkflow
- *
- * Steps:
- * 1. Select Farm -> POST /api/v1/inspection  (creates inspection and returns inspectionId)
- * 2. Inspector details (inspectorName + date) -> PATCH /api/v1/inspection/{inspectionId}
- *    then GET checklist -> GET /api/v1/checklists/inspection/{inspectionId}
- * 3. Answer checklist -> POST /api/v1/checklists/answers  (array of { checklistId, answer })
- *    then complete inspection -> POST /api/v1/inspection/{inspectionId}/complete
- * 4. Summary / success
- */
-
 interface FarmerResponse {
     id: string;
     name: string;
@@ -28,18 +16,18 @@ interface FarmerResponse {
     county: string;
 }
 
-interface Farm  {
+interface Farm {
     id: string;
     farmName: string;
     location?: string;
     farmerResponse: FarmerResponse;
-};
+}
 
-interface ChecklistItem  {
+interface ChecklistItem {
     id: string;
     question: string;
     answer: boolean | null;
-};
+}
 
 const InspectionWorkflow: React.FC = () => {
     const [currentStep, setCurrentStep] = useState<number>(1);
@@ -54,14 +42,13 @@ const InspectionWorkflow: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [message, setMessage] = useState<string | null>(null);
 
-    // fetch farms on mount
+    // load farms once
     useEffect(() => {
         setLoading(true);
-        fetch("https://organic-certification-production.up.railway.app/api/v1/farm")
+        fetch("http://localhost:8080/api/v1/farm")
             .then((res) => res.json())
             .then((json) => {
                 if (json?.data?.content) {
-                    // adapt shape if necessary
                     setFarms(json.data.content);
                 } else {
                     setFarms([]);
@@ -78,147 +65,123 @@ const InspectionWorkflow: React.FC = () => {
     const goPrev = () => setCurrentStep((s) => Math.max(1, s - 1));
     const goTo = (step: number) => setCurrentStep(step);
 
-    // 1) Create inspection when pressing Next on farm selection
+    /**
+     * NOTE:
+     * - This function now only advances the UI from "Farm selection" -> "Inspector details".
+     * - It DOES NOT create an inspection (POST). Creating the inspection must happen only when
+     *   inspectorName + date are provided and the user clicks "Save & Load Checklist".
+     *
+     * Keep function name (initiateInspectionForSelectedFarm) as requested but behaviour changed.
+     */
     const initiateInspectionForSelectedFarm = async () => {
         if (!selectedFarm) return;
-        setLoading(true);
+        // simply go to inspector details step (2) so user can fill inspectorName + date,
+        // which will be used to create the inspection (POST) later.
         setMessage(null);
-
-        try {
-            const res = await fetch(
-                "https://organic-certification-production.up.railway.app/api/v1/inspection",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ farmId: selectedFarm.id }),
-                }
-            );
-
-            const json = await res.json();
-            // backend might return inspectionId under json.data.inspectonId or similar - we use json.data.inspectionId as you described earlier
-            const id = json?.data?.inspectionId ?? json?.data?.id ?? null;
-            if (!id) {
-                console.warn("No inspectionId returned from create inspection:", json);
-            } else {
-                setInspectionId(id);
-            }
-
-            // advance to inspector details step (step 2)
-            setCurrentStep(2);
-        } catch (err) {
-            console.error("Failed to create inspection:", err);
-            setMessage("Failed to initiate inspection — try again.");
-            // still allow moving to step 2 so user can fill details (optional)
-            setCurrentStep(2);
-        } finally {
-            setLoading(false);
-        }
+        setCurrentStep(2);
     };
 
-    // 2) Save inspector details and fetch checklist
+    /**
+     * Create inspection (POST) with { farmId, inspectorName, date } then GET checklist.
+     * No PATCH anywhere.
+     */
     const saveInspectorAndLoadChecklist = async () => {
         setMessage(null);
-        let id = inspectionId;
 
-        // If inspectionId not ready, create one
-        if (!id && selectedFarm) {
-            const res = await fetch("https://organic-certification-production.up.railway.app/api/v1/inspection", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ farmId: selectedFarm.id }),
-            });
-            const json = await res.json();
-            id = json?.data?.inspectionId ?? json?.data?.id;
-            setInspectionId(id);
+        if (!selectedFarm) {
+            setMessage("Please select a farm first.");
+            return;
+        }
+        if (!inspectorName || !inspectionDate) {
+            setMessage("Please enter inspector name and date.");
+            return;
         }
 
-        // PATCH with inspector details
+        setLoading(true);
+
         try {
-            await fetch(`https://organic-certification-production.up.railway.app/api/v1/inspection/${id}`, {
-                method: "PATCH",
+            // 1) create inspection (POST)
+            const createRes = await fetch("http://localhost:8080/api/v1/inspection", {
+                method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    farmId: selectedFarm.id,
                     inspectorName,
                     date: inspectionDate,
                 }),
             });
-        } catch (err) {
-            console.error(err);
-        }
 
-        // PATCH inspection with inspector details (if inspectionId exists)
-        if (inspectionId) {
-            setLoading(true);
-            try {
-                const payload = {
-                    inspectorName: inspectorName,
-                    date: inspectionDate,
-                };
-
-                const res = await fetch(
-                    `https://organic-certification-production.up.railway.app/api/v1/inspection/${inspectionId}`,
-                    {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload),
-                    }
-                );
-
-                if (!res.ok) {
-                    console.warn("PATCH inspection returned non-OK", await res.text());
-                }
-            } catch (err) {
-                console.error("Failed to patch inspection:", err);
-                setMessage("Failed to save inspector details (saved locally).");
-            } finally {
+            if (!createRes.ok) {
+                const text = await createRes.text();
+                console.warn("Create inspection failed:", text);
+                setMessage("Failed to create inspection.");
                 setLoading(false);
+                return;
             }
-        }
 
-        // fetch checklist for this inspection
-        try {
-            setLoading(true);
-            const res = await fetch(
-                `https://organic-certification-production.up.railway.app/api/v1/checklists/inspection/${inspectionId}`
+            const createJson = await createRes.json();
+            // backend returns created inspection in createJson.data (example you gave)
+            // id might be createJson.data.id
+            const createdId = createJson?.data?.id ?? createJson?.data?.inspectionId ?? null;
+            if (!createdId) {
+                console.warn("No inspection id returned:", createJson);
+                setMessage("No inspection id returned by server.");
+                setLoading(false);
+                return;
+            }
+
+            setInspectionId(createdId);
+
+            // 2) fetch checklist for created inspection id
+            const checklistRes = await fetch(
+                `http://localhost:8080/api/v1/checklists/inspection/${createdId}`
             );
-            const json = await res.json();
-            // Expecting json.data to be an array as in your sample. Fallback if different.
-            const items = Array.isArray(json.data)
-                ? json.data
-                : json?.data?.content ?? json?.data ?? [];
+
+            if (!checklistRes.ok) {
+                const text = await checklistRes.text();
+                console.warn("Fetch checklist failed:", text);
+                setMessage("Failed to load checklist.");
+                setLoading(false);
+                return;
+            }
+
+            const checklistJson = await checklistRes.json();
+            const items = Array.isArray(checklistJson.data)
+                ? checklistJson.data
+                : checklistJson?.data?.content ?? checklistJson?.data ?? [];
 
             const formatted: ChecklistItem[] = (items as any[]).map((it) => ({
                 id: it.id,
                 question: it.question ?? it.title ?? "Unknown question",
-                answer: null,
+                answer: it.answer ?? null,
             }));
+
             setChecklist(formatted);
 
-            // advance to checklist step
+            // move to checklist step
             setCurrentStep(3);
         } catch (err) {
-            console.error("Failed to fetch checklist:", err);
-            setMessage("Failed to load checklist. You can try again.");
+            console.error("saveInspectorAndLoadChecklist error:", err);
+            setMessage("Network error while creating inspection or fetching checklist.");
         } finally {
             setLoading(false);
         }
     };
 
-    // Answer change
+    // Answer change (keeps checklist state)
     const setAnswer = (checklistId: string, answer: boolean) => {
         setChecklist((prev) =>
             prev.map((item) => (item.id === checklistId ? { ...item, answer } : item))
         );
     };
 
-    // 3) Submit answers and complete inspection
+    // Submit answers
     const submitAnswersAndComplete = async () => {
         if (!inspectionId) {
             setMessage("Missing inspection id.");
             return;
         }
 
-        // ensure all answered (optional)
         const unanswered = checklist.filter((c) => c.answer === null);
         if (unanswered.length > 0) {
             const confirmProceed = window.confirm(
@@ -227,7 +190,6 @@ const InspectionWorkflow: React.FC = () => {
             if (!confirmProceed) return;
         }
 
-        // build answers payload expected by your API: array of { checklistId, answer }
         const answersPayload = checklist.map((c) => ({
             checklistId: c.id,
             answer: !!c.answer,
@@ -237,15 +199,11 @@ const InspectionWorkflow: React.FC = () => {
         setMessage(null);
 
         try {
-            // post answers
-            const resAnswers = await fetch(
-                "https://organic-certification-production.up.railway.app/api/v1/checklists/answers",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(answersPayload),
-                }
-            );
+            const resAnswers = await fetch("http://localhost:8080/api/v1/checklists/answers", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(answersPayload),
+            });
 
             if (!resAnswers.ok) {
                 const text = await resAnswers.text();
@@ -255,37 +213,18 @@ const InspectionWorkflow: React.FC = () => {
                 return;
             }
 
-            // then complete inspection (endpoint you gave earlier was ..../complete)
-            const resComplete = await fetch(
-                `https://organic-certification-production.up.railway.app/api/v1/inspection/${inspectionId}/complete`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    // some backends expect answers in complete call too; sending same payload (safe)
-                    body: JSON.stringify(answersPayload),
-                }
-            );
-
-            if (!resComplete.ok) {
-                const text = await resComplete.text();
-                console.warn("Complete inspection failed:", text);
-                setMessage("Answers saved but failed to complete inspection.");
-                setLoading(false);
-                return;
-            }
-
-            // success
-            setMessage("Inspection submitted successfully.");
+            // success response expected: { code: 200, message: "Checklist answers submitted successfully" }
+            setMessage("Checklist answers submitted successfully.");
             setCurrentStep(4);
         } catch (err) {
-            console.error("Failed submitting answers / completing inspection:", err);
+            console.error("Failed submitting answers:", err);
             setMessage("Network error while submitting answers.");
         } finally {
             setLoading(false);
         }
     };
 
-    // UI render pieces
+    // UI helpers (unchanged structure)
     const steps = [
         { id: 1, name: "Farm Selection", icon: MapPin },
         { id: 2, name: "Inspector Details", icon: ClipboardCheck },
@@ -301,9 +240,11 @@ const InspectionWorkflow: React.FC = () => {
                         <div className="absolute inset-0 flex items-center">
                             <div className={`h-0.5 w-full ${s.id < currentStep ? "bg-pesiraGreen" : "bg-pesiraGray200"}`} />
                         </div>
-                        <div className={`relative w-8 h-8 flex items-center justify-center rounded-full border-2 ${
-                            s.id < currentStep ? "bg-pesiraGreen border-pesiraGreen" : s.id === currentStep ? "border-pesiraGreen bg-white" : "border-pesiraGray300 bg-white"
-                        }`}>
+                        <div
+                            className={`relative w-8 h-8 flex items-center justify-center rounded-full border-2 ${
+                                s.id < currentStep ? "bg-pesiraGreen border-pesiraGreen" : s.id === currentStep ? "border-pesiraGreen bg-white" : "border-pesiraGray300 bg-white"
+                            }`}
+                        >
                             {s.id < currentStep ? <Check className="h-4 w-4 text-white" /> : <s.icon className={`h-4 w-4 ${s.id === currentStep ? "text-pesiraGreen" : "text-pesiraGray400"}`} />}
                         </div>
                         <div className="mt-2">
@@ -330,9 +271,7 @@ const InspectionWorkflow: React.FC = () => {
                     <div
                         key={f.id}
                         onClick={() => setSelectedFarm(f)}
-                        className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
-                            selectedFarm?.id === f.id ? "border-pesiraGreen bg-blue-50" : "border-pesiraGray200 hover:border-pesiraGray300"
-                        }`}
+                        className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${selectedFarm?.id === f.id ? "border-pesiraGreen bg-blue-50" : "border-pesiraGray200 hover:border-pesiraGray300"}`}
                     >
                         <div>
                             <h3 className="text-sm font-medium text-pesiraGray900">{f.farmName}</h3>
@@ -349,38 +288,23 @@ const InspectionWorkflow: React.FC = () => {
         <div className="space-y-6">
             <div>
                 <h2 className="text-xl font-semibold text-pesiraGray900">Inspector Details</h2>
-                <p className="mt-1 text-sm text-pesiraGray600">Enter inspector name and the inspection date, then load the checklist.</p>
+                <p className="mt-1 text-sm text-pesiraGray600">Enter inspector name and the inspection date, then create inspection and load the checklist.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium text-pesiraGray700 mb-2">Inspector name</label>
-                    <input
-                        value={inspectorName}
-                        onChange={(e) => setInspectorName(e.target.value)}
-                        placeholder="e.g. Judith Njeri"
-                        className="w-full border rounded px-3 py-2"
-                    />
+                    <input value={inspectorName} onChange={(e) => setInspectorName(e.target.value)} placeholder="e.g. Judith Njeri" className="w-full border rounded px-3 py-2" />
                 </div>
 
                 <div>
                     <label className="block text-sm font-medium text-pesiraGray700 mb-2">Inspection date</label>
-                    <input
-                        type="date"
-                        value={inspectionDate}
-                        onChange={(e) => setInspectionDate(e.target.value)}
-                        className="w-full border rounded px-3 py-2"
-                    />
+                    <input type="date" value={inspectionDate} onChange={(e) => setInspectionDate(e.target.value)} className="w-full border rounded px-3 py-2" />
                 </div>
             </div>
 
             <div className="flex justify-end space-x-3">
-                <button
-                    onClick={() => setCurrentStep(1)}
-                    className="px-4 py-2 border rounded text-sm"
-                >
-                    Back
-                </button>
+                <button onClick={() => setCurrentStep(1)} className="px-4 py-2 border rounded text-sm">Back</button>
 
                 <button
                     onClick={saveInspectorAndLoadChecklist}
@@ -423,11 +347,7 @@ const InspectionWorkflow: React.FC = () => {
 
                 <div className="flex items-center gap-3">
                     {message && <div className="text-sm text-amber-700">{message}</div>}
-                    <button
-                        onClick={submitAnswersAndComplete}
-                        disabled={loading}
-                        className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}
-                    >
+                    <button onClick={submitAnswersAndComplete} disabled={loading} className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}>
                         {loading ? "Submitting..." : "Submit Answers & Complete"}
                     </button>
                 </div>
@@ -488,42 +408,26 @@ const InspectionWorkflow: React.FC = () => {
                 </div>
 
                 <div className="flex justify-between mt-6 pt-4 border-t">
-                    <button
-                        onClick={goPrev}
-                        disabled={currentStep === 1}
-                        className="px-4 py-2 border rounded text-sm disabled:opacity-50"
-                    >
+                    <button onClick={goPrev} disabled={currentStep === 1} className="px-4 py-2 border rounded text-sm disabled:opacity-50">
                         <ChevronLeft className="inline-block h-4 w-4 mr-2" />
                         Previous
                     </button>
 
                     {currentStep === 1 ? (
-                        <button
-                            onClick={initiateInspectionForSelectedFarm}
-                            disabled={!selectedFarm || loading}
-                            className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}
-                        >
+                        <button onClick={initiateInspectionForSelectedFarm} disabled={!selectedFarm || loading} className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}>
                             {loading ? "Initiating..." : "Next"}
                             <ChevronRight className="inline-block h-4 w-4 ml-2" />
                         </button>
                     ) : currentStep === 2 ? (
-                        <button
-                            onClick={saveInspectorAndLoadChecklist}
-                            disabled={!inspectorName || !inspectionDate || loading}
-                            className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}
-                        >
+                        <button onClick={saveInspectorAndLoadChecklist} disabled={!inspectorName || !inspectionDate || loading} className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}>
                             {loading ? "Loading..." : "Save & Load Checklist"}
                         </button>
                     ) : currentStep === 3 ? (
-                        <button
-                            onClick={submitAnswersAndComplete}
-                            disabled={loading}
-                            className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}
-                        >
+                        <button onClick={submitAnswersAndComplete} disabled={loading} className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}>
                             {loading ? "Submitting..." : "Submit Answers"}
                         </button>
                     ) : (
-                        <div /> /* step 4 - no right action here, summary shows New Inspection button */
+                        <div />
                     )}
                 </div>
             </div>
