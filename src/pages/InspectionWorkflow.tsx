@@ -45,7 +45,7 @@ const InspectionWorkflow: React.FC = () => {
     // load farms once
     useEffect(() => {
         setLoading(true);
-        fetch("http://localhost:8080/api/v1/farm")
+        fetch("https://organic-certification-production.up.railway.app/api/v1/farm")
             .then((res) => res.json())
             .then((json) => {
                 if (json?.data?.content) {
@@ -86,7 +86,7 @@ const InspectionWorkflow: React.FC = () => {
 
         try {
             // 1) create inspection (POST)
-            const createRes = await fetch("http://localhost:8080/api/v1/inspection", {
+            const createRes = await fetch("https://organic-certification-production.up.railway.app/api/v1/inspection", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -105,8 +105,7 @@ const InspectionWorkflow: React.FC = () => {
             }
 
             const createJson = await createRes.json();
-            // backend returns created inspection in createJson.data (example you gave)
-            // id might be createJson.data.id
+
             const createdId = createJson?.data?.id ?? createJson?.data?.inspectionId ?? null;
             if (!createdId) {
                 console.warn("No inspection id returned:", createJson);
@@ -117,9 +116,9 @@ const InspectionWorkflow: React.FC = () => {
 
             setInspectionId(createdId);
 
-            // 2) fetch checklist for created inspection id
+
             const checklistRes = await fetch(
-                `http://localhost:8080/api/v1/checklists/inspection/${createdId}`
+                `https://organic-certification-production.up.railway.app/api/v1/checklists/inspection/${createdId}`
             );
 
             if (!checklistRes.ok) {
@@ -143,7 +142,7 @@ const InspectionWorkflow: React.FC = () => {
 
             setChecklist(formatted);
 
-            // move to checklist step
+
             setCurrentStep(3);
         } catch (err) {
             console.error("saveInspectorAndLoadChecklist error:", err);
@@ -184,7 +183,7 @@ const InspectionWorkflow: React.FC = () => {
         setMessage(null);
 
         try {
-            const resAnswers = await fetch("http://localhost:8080/api/v1/checklists/answers", {
+            const resAnswers = await fetch("https://organic-certification-production.up.railway.app/api/v1/checklists/answers", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(answersPayload),
