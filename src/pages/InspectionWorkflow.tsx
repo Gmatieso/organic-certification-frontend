@@ -65,18 +65,9 @@ const InspectionWorkflow: React.FC = () => {
     const goPrev = () => setCurrentStep((s) => Math.max(1, s - 1));
     const goTo = (step: number) => setCurrentStep(step);
 
-    /**
-     * NOTE:
-     * - This function now only advances the UI from "Farm selection" -> "Inspector details".
-     * - It DOES NOT create an inspection (POST). Creating the inspection must happen only when
-     *   inspectorName + date are provided and the user clicks "Save & Load Checklist".
-     *
-     * Keep function name (initiateInspectionForSelectedFarm) as requested but behaviour changed.
-     */
+
     const initiateInspectionForSelectedFarm = async () => {
         if (!selectedFarm) return;
-        // simply go to inspector details step (2) so user can fill inspectorName + date,
-        // which will be used to create the inspection (POST) later.
         setMessage(null);
         setCurrentStep(2);
     };
