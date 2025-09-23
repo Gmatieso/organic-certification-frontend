@@ -63,19 +63,13 @@ const InspectionWorkflow: React.FC = () => {
 
     // Step helpers
     const goPrev = () => setCurrentStep((s) => Math.max(1, s - 1));
-    const goTo = (step: number) => setCurrentStep(step);
-
-
     const initiateInspectionForSelectedFarm = async () => {
         if (!selectedFarm) return;
         setMessage(null);
         setCurrentStep(2);
     };
 
-    /**
-     * Create inspection (POST) with { farmId, inspectorName, date } then GET checklist.
-     * No PATCH anywhere.
-     */
+
     const saveInspectorAndLoadChecklist = async () => {
         setMessage(null);
 
@@ -159,7 +153,7 @@ const InspectionWorkflow: React.FC = () => {
         }
     };
 
-    // Answer change (keeps checklist state)
+
     const setAnswer = (checklistId: string, answer: boolean) => {
         setChecklist((prev) =>
             prev.map((item) => (item.id === checklistId ? { ...item, answer } : item))
@@ -215,7 +209,7 @@ const InspectionWorkflow: React.FC = () => {
         }
     };
 
-    // UI helpers (unchanged structure)
+    // UI helpers
     const steps = [
         { id: 1, name: "Farm Selection", icon: MapPin },
         { id: 2, name: "Inspector Details", icon: ClipboardCheck },
