@@ -1,332 +1,273 @@
-import React, { useState } from 'react';
-import { Search, Download, Calendar, Award, Filter, AlertCircle, CheckCircle } from 'lucide-react';
+import React, {useEffect, useState} from "react";
+import {AlertCircle, Award, Calendar, CheckCircle, Download, Filter, Search,} from "lucide-react";
 
 interface Certificate {
-  id: number;
-  farmName: string;
-  certificateNumber: string;
-  issueDate: string;
-  expiryDate: string;
-  status: 'valid' | 'expiring-soon' | 'expired' | 'pending';
-  owner: string;
-  location: string;
+    id: string;
+    certificateNumber: string;
+    issueDate: string;
+    expiryDate: string;
+    pdfUrl: string;
+    status?: "valid" | "expiring-soon" | "expired" | "pending";
+    complianceScore: number;
+    farmResponse: FarmResponse;
+}
+
+interface FarmResponse {
+    id: string;
+    farmName: string;
+    location: string;
+    areaHa: number;
+    farmerResponse: FarmerResponse;
+}
+
+interface FarmerResponse {
+    id: string;
+    name: string;
+    phone: string;
+    email: string;
+    county: string;
 }
 
 const CertificateManagement: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState<string>("all");
+    const [certificates, setCertificates] = useState<Certificate[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-  const certificates: Certificate[] = [
-    {
-      id: 1,
-      farmName: 'Green Valley Farm',
-      certificateNumber: 'ORG-2024-001',
-      issueDate: '2024-01-15',
-      expiryDate: '2025-01-14',
-      status: 'valid',
-      owner: 'John Kamau',
-      location: 'Kiambu County'
-    },
-    {
-      id: 2,
-      farmName: 'Sunrise Organic',
-      certificateNumber: 'ORG-2024-002',
-      issueDate: '2024-01-20',
-      expiryDate: '2025-01-19',
-      status: 'valid',
-      owner: 'Mary Wanjiku',
-      location: 'Nakuru County'
-    },
-    {
-      id: 3,
-      farmName: 'Highland Coffee Estate',
-      certificateNumber: 'ORG-2023-045',
-      issueDate: '2023-12-10',
-      expiryDate: '2024-12-09',
-      status: 'expiring-soon',
-      owner: 'David Mwangi',
-      location: 'Nyeri County'
-    },
-    {
-      id: 4,
-      farmName: 'Fresh Herbs Kenya',
-      certificateNumber: 'ORG-2023-032',
-      issueDate: '2023-08-15',
-      expiryDate: '2024-08-14',
-      status: 'expired',
-      owner: 'Grace Njeri',
-      location: 'Meru County'
-    },
-    {
-      id: 5,
-      farmName: 'Organic Maize Fields',
-      certificateNumber: 'ORG-2024-003',
-      issueDate: '2024-01-25',
-      expiryDate: '2025-01-24',
-      status: 'valid',
-      owner: 'Peter Kipchoge',
-      location: 'Uasin Gishu County'
-    },
-    {
-      id: 6,
-      farmName: 'Tropical Fruits Co.',
-      certificateNumber: 'PENDING',
-      issueDate: '',
-      expiryDate: '',
-      status: 'pending',
-      owner: 'Susan Mutua',
-      location: 'Machakos County'
-    }
-  ];
+    useEffect(() => {
+        fetchCertificates();
+    }, []);
 
-  const filteredCertificates = certificates.filter(cert => {
-    const matchesSearch = cert.farmName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         cert.certificateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         cert.owner.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || cert.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      'valid': 'bg-pesiraEmerald100 text-emerald-800 border-emerald-200',
-      'expiring-soon': 'bg-pesiraAmber100 text-amber-800 border-amber-200',
-      'expired': 'bg-pesiraRed100 text-red-800 border-pesiraRed200',
-      'pending': 'bg-pesiraBlue100 text-blue-800 border-blue-200'
-    };
-    
-    const icons = {
-      'valid': CheckCircle,
-      'expiring-soon': AlertCircle,
-      'expired': AlertCircle,
-      'pending': Calendar
+    const fetchCertificates = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await fetch("http://localhost:8080/api/v1/certificate");
+            if (!res.ok) throw new Error("Failed to fetch");
+            const data = await res.json();
+            setCertificates(data?.data?.content || []);
+        } catch (err) {
+            setError("Error fetching certificates. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const Icon = icons[status as keyof typeof icons];
-    
-    return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${styles[status as keyof typeof styles]}`}>
-        <Icon className="h-3 w-3 mr-1" />
-        {status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-      </span>
-    );
-  };
+    const filteredCertificates = certificates.filter((cert) => {
+        const matchesSearch = cert?.farmResponse?.farmName?.toLowerCase().includes(searchTerm.toLowerCase()) || cert?.certificateNumber
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) || cert?.farmResponse?.farmerResponse?.name
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase());
 
-  const handleDownloadCertificate = (certificate: Certificate) => {
-    // Simulate PDF download
-    alert(`Downloading certificate for ${certificate.farmName}`);
-  };
+        const matchesStatus = statusFilter === "all" || cert?.status === statusFilter;
 
-  const handleGenerateCertificate = (certificate: Certificate) => {
-    // Simulate certificate generation
-    alert(`Generating certificate for ${certificate.farmName}`);
-  };
+        return matchesSearch && matchesStatus;
+    });
 
-  const getDaysUntilExpiry = (expiryDate: string) => {
-    if (!expiryDate) return null;
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
+    const getStatusBadge = (status?: string) => {
+        if (!status) {
+            return (<span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-600">
+          UNKNOWN
+        </span>);
+        }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-pesiraGray900">Certificate Management</h1>
-        <p className="mt-1 text-sm text-pesiraGray600">Manage and track organic certification status</p>
-      </div>
+        const styles: Record<string, string> = {
+            valid: "bg-pesiraEmerald100 text-emerald-800 border-emerald-200",
+            "expiring-soon": "bg-pesiraAmber100 text-amber-800 border-amber-200",
+            expired: "bg-pesiraRed100 text-red-800 border-pesiraRed200",
+            pending: "bg-pesiraBlue100 text-blue-800 border-blue-200",
+        };
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-pesiraWhite rounded-lg border border-pesiraGray200 p-4">
-          <div className="flex items-center">
-            <div className="bg-pesiraEmerald100 p-2 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-pesiraGray600">Valid Certificates</p>
-              <p className="text-xl font-bold text-pesiraGray900">
-                {certificates.filter(c => c.status === 'valid').length}
-              </p>
-            </div>
-          </div>
+        const icons = {
+            valid: CheckCircle, "expiring-soon": AlertCircle, expired: AlertCircle, pending: Calendar,
+        };
+
+        const Icon = icons[status as keyof typeof icons];
+
+        return (<span
+            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${styles[status]}`}
+        >
+        <Icon className="h-3 w-3 mr-1"/>
+            {status
+                .split("-")
+                .map((word) => word[0].toUpperCase() + word.slice(1))
+                .join(" ")}
+      </span>);
+    };
+
+    const handleDownloadCertificate = (certificate: Certificate) => {
+        if (certificate.pdfUrl) {
+            window.open(certificate.pdfUrl, "_blank");
+        } else {
+            alert("PDF not available for this certificate.");
+        }
+    };
+
+    const handleGenerateCertificate = async (inspectionId: string) => {
+        try {
+            const res = await fetch(`http://localhost:8080/api/v1/inspection/${inspectionId}/complete`, {method: "POST"});
+            const data = await res.json();
+            if (data?.code === 200) {
+                alert("Certificate generated successfully!");
+                fetchCertificates();
+            } else {
+                alert("Failed to generate certificate");
+            }
+        } catch {
+            alert("Error generating certificate.");
+        }
+    };
+
+    const getDaysUntilExpiry = (expiryDate: string) => {
+        if (!expiryDate) return null;
+        const today = new Date();
+        const expiry = new Date(expiryDate);
+        const diffTime = expiry.getTime() - today.getTime();
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    };
+
+    return (<div className="space-y-6">
+        {/* Header */}
+        <div>
+            <h1 className="text-2xl font-bold text-pesiraGray900">
+                Certificate Management
+            </h1>
+            <p className="mt-1 text-sm text-pesiraGray600">
+                Manage and track organic certification status
+            </p>
         </div>
-        
-        <div className="bg-white rounded-lg border border-pesiraGray200 p-4">
-          <div className="flex items-center">
-            <div className="bg-pesiraAmber100 p-2 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-pesiraAmber600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-pesiraGray600">Expiring Soon</p>
-              <p className="text-xl font-bold text-pesiraGray900">
-                {certificates.filter(c => c.status === 'expiring-soon').length}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg border border-pesiraGray200 p-4">
-          <div className="flex items-center">
-            <div className="bg-pesiraRed100 p-2 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-pesiraRed600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-pesiraGray600">Expired</p>
-              <p className="text-xl font-bold text-pesiraGray900">
-                {certificates.filter(c => c.status === 'expired').length}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-pesiraWhite rounded-lg border border-pesiraGray200 p-4">
-          <div className="flex items-center">
-            <div className="bg-pesiraBlue100 p-2 rounded-lg">
-              <Calendar className="h-5 w-5 text-pesiraBlue600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-pesiraGray600">Pending</p>
-              <p className="text-xl font-bold text-pesiraGray900">
-                {certificates.filter(c => c.status === 'pending').length}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Filters */}
-      <div className="bg-pesiraWhite rounded-lg shadow-sm border border-pesiraGray200 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-pesiraGray400" />
-              <input
-                type="text"
-                placeholder="Search certificates, farms, or owners..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-pesiraGray300 rounded-md focus:ring-2 focus:ring-pesiraGreen100 focus:border-transparent"
-              />
+        {/* Filters */}
+        <div className="bg-pesiraWhite rounded-lg shadow-sm border border-pesiraGray200 p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-pesiraGray400"/>
+                        <input
+                            type="text"
+                            placeholder="Search certificates, farms, or owners..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border border-pesiraGray300 rounded-md focus:ring-2 focus:ring-pesiraGreen100 focus:border-transparent"
+                        />
+                    </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                    <Filter className="h-4 w-4 text-pesiraGray400"/>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="border border-pesiraGray300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-pesiraGreen100 focus:border-transparent"
+                    >
+                        <option value="all">All Status</option>
+                        <option value="valid">Valid</option>
+                        <option value="expiring-soon">Expiring Soon</option>
+                        <option value="expired">Expired</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Filter className="h-4 w-4 text-pesiraGray400" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-pesiraGray300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-pesiraGreen100 focus:border-transparent"
+        </div>
+
+        {/* Loading / Error / Empty states */}
+        {loading ? (<div className="text-center py-12 text-sm text-pesiraGray500">
+            Loading certificates...
+        </div>) : error ? (<div className="text-center py-12">
+            <p className="text-red-600">{error}</p>
+            <button
+                onClick={fetchCertificates}
+                className="mt-4 bg-pesiraGreen600 text-white px-4 py-2 rounded-lg hover:bg-pesiraGreen700"
             >
-              <option value="all">All Status</option>
-              <option value="valid">Valid</option>
-              <option value="expiring-soon">Expiring Soon</option>
-              <option value="expired">Expired</option>
-              <option value="pending">Pending</option>
-            </select>
-          </div>
-        </div>
-      </div>
+                Retry
+            </button>
+        </div>) : filteredCertificates.length === 0 ? (<div className="text-center py-12">
+            <Award className="mx-auto h-12 w-12 text-pesiraGray400"/>
+            <h3 className="mt-2 text-sm font-medium text-pesiraGray900">
+                No certificates found
+            </h3>
+            <p className="mt-1 text-sm text-pesiraGray500">
+                Try adjusting your search criteria
+            </p>
+        </div>) : (<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredCertificates.map((certificate) => {
+                const daysUntilExpiry = getDaysUntilExpiry(certificate.expiryDate);
+                return (<div
+                    key={certificate.id}
+                    className="bg-pesiraWhite rounded-lg border border-pesiraGray200 p-6 hover:shadow-md transition-shadow"
+                >
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center">
+                            <div
+                                className="bg-gradient-to-r from-pesiraGreen100 to-emerald-500 p-2 rounded-lg">
+                                <Award className="h-5 w-5 text-pesiraWhite"/>
+                            </div>
+                            <div className="ml-3">
+                                <h3 className="text-lg font-semibold text-pesiraGray900">
+                                    {certificate?.farmResponse?.farmName}
+                                </h3>
+                                <p className="text-sm text-pesiraGray600">
+                                    {certificate?.farmResponse?.farmerResponse?.name}
+                                </p>
+                            </div>
+                        </div>
+                        {getStatusBadge(certificate?.status)}
+                    </div>
 
-      {/* Certificates Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredCertificates.map((certificate) => {
-          const daysUntilExpiry = getDaysUntilExpiry(certificate.expiryDate);
-          
-          return (
-            <div key={certificate.id} className="bg-pesiraWhite rounded-lg border border-pesiraGray200 p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center">
-                  <div className="bg-gradient-to-r from-pesiraGreen100 to-emerald-500 p-2 rounded-lg">
-                    <Award className="h-5 w-5 text-pesiraWhite" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-lg font-semibold text-pesiraGray900">{certificate.farmName}</h3>
-                    <p className="text-sm text-pesiraGray600">{certificate.owner}</p>
-                  </div>
-                </div>
-                {getStatusBadge(certificate.status)}
-              </div>
+                    <div className="space-y-3 text-sm">
+                        <div className="flex justify-between">
+                            <span className="text-pesiraGray600">Certificate #:</span>
+                            <span className="font-medium text-pesiraGray900">{certificate?.certificateNumber}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-pesiraGray600">Farmer:</span>
+                            <span className="text-pesiraGray900">{certificate?.farmResponse?.farmerResponse?.name}</span>
+                        </div>
+                        {certificate?.issueDate && (<div className="flex justify-between">
+                            <span className="text-pesiraGray600">Issue Date:</span>
+                            <span className="text-pesiraGray900">
+                        {new Date(certificate.issueDate).toLocaleDateString()}
+                        </span>
+                        </div>)}
+                        {certificate.expiryDate && (<div className="flex justify-between">
+                            <span className="text-pesiraGray600">Expiry Date:</span>
+                            <span className="text-pesiraGray900">
+                        {new Date(certificate.expiryDate).toLocaleDateString()}
+                      </span>
+                        </div>)}
 
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-pesiraGray600">Certificate #:</span>
-                  <span className="font-medium text-pesiraGray900">{certificate.certificateNumber}</span>
-                </div>
-                
-                <div className="flex justify-between text-sm">
-                  <span className="text-pesiraGray600">Location:</span>
-                  <span className="text-pesiraGray900">{certificate.location}</span>
-                </div>
-                
-                {certificate.issueDate && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-pesiraGray600">Issue Date:</span>
-                    <span className="text-pesiraGray900">{new Date(certificate.issueDate).toLocaleDateString()}</span>
-                  </div>
-                )}
-                
-                {certificate.expiryDate && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-pesiraGray600">Expiry Date:</span>
-                    <span className="text-pesiraGray900">{new Date(certificate.expiryDate).toLocaleDateString()}</span>
-                  </div>
-                )}
+                        {daysUntilExpiry !== null && (<div className="flex justify-between">
+                      <span className="text-pesiraGray600">
+                        Compliance Score:
+                      </span>
+                            <span className="text-pesiraGray900">{certificate?.complianceScore}</span>
+                        </div>)}
+                    </div>
 
-                {daysUntilExpiry !== null && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-pesiraGray600">Days Until Expiry:</span>
-                    <span className={`font-medium ${
-                      daysUntilExpiry < 30 ? 'text-pesiraRed600' : 
-                      daysUntilExpiry < 90 ? 'text-pesiraAmber600' : 'text-emerald-600'
-                    }`}>
-                      {daysUntilExpiry > 0 ? `${daysUntilExpiry} days` : 'Expired'}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex space-x-3 mt-6 pt-4 border-t border-pesiraGray200">
-                {certificate.status === 'pending' ? (
-                  <button
-                    onClick={() => handleGenerateCertificate(certificate)}
-                    className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-pesiraWhite bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald hover:from-pesiraGreen500 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pesiraGreen100 transition-colors"
-                  >
-                    <Award className="h-4 w-4 mr-2" />
-                    Generate Certificate
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleDownloadCertificate(certificate)}
-                    className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-pesiraGray300 text-sm font-medium rounded-md text-pesiraGray700 bg-pesiraWhite hover:bg-pesiraGray50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pesiraGreen100 transition-colors"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download PDF
-                  </button>
-                )}
-                
-                <button className="px-4 py-2 border border-pesiraGray300 text-sm font-medium rounded-md text-pesiraGray700 bg-pesiraWhite hover:bg-pesiraGray50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pesiraGreen100 transition-colors">
-                  View Details
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {filteredCertificates.length === 0 && (
-        <div className="text-center py-12">
-          <Award className="mx-auto h-12 w-12 text-pesiraGray400" />
-          <h3 className="mt-2 text-sm font-medium text-pesiraGray900">No certificates found</h3>
-          <p className="mt-1 text-sm text-pesiraGray500">Try adjusting your search criteria</p>
-        </div>
-      )}
-    </div>
-  );
+                    <div className="flex space-x-3 mt-6 pt-4 border-t border-pesiraGray200">
+                        {certificate?.status === "pending" ? (<button
+                            onClick={() => handleGenerateCertificate(certificate?.id)}
+                            className="flex-1 inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald hover:from-pesiraGreen500 hover:to-emerald-700"
+                        >
+                            <Award className="h-4 w-4 mr-2"/>
+                            Generate Certificate
+                        </button>) : (<button
+                            onClick={() => handleDownloadCertificate(certificate)}
+                            className="flex-1 inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-pesiraGray700 border border-pesiraGray300 bg-pesiraWhite hover:bg-pesiraGray50"
+                        >
+                            <Download className="h-4 w-4 mr-2"/>
+                            Download PDF
+                        </button>)}
+                        <button
+                            className="px-4 py-2 text-sm font-medium rounded-md text-pesiraGray700 border border-pesiraGray300 bg-pesiraWhite hover:bg-pesiraGray50">
+                            View Details
+                        </button>
+                    </div>
+                </div>);
+            })}
+        </div>)}
+    </div>);
 };
 
 export default CertificateManagement;
