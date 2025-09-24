@@ -97,15 +97,7 @@ const CertificateManagement: React.FC = () => {
       </span>);
     };
 
-    // const handleDownloadCertificate = (certificate: Certificate) => {
-    //     if (certificate.pdfUrl) {
-    //         window.open(certificate.pdfUrl, "_blank");
-    //     } else {
-    //         alert("PDF not available for this certificate.");
-    //     }
-    // };
-
-    const handleGenerateCertificate = async (certificateId: string, certificateNumber: string) => {
+    const handleDownloadCertificate = async (certificateId: string, certificateNumber: string) => {
         try {
             const res = await fetch(`http://localhost:8080/api/v1/certificate/${certificateId}/download`, {
                 method: "GET",
@@ -123,7 +115,7 @@ const CertificateManagement: React.FC = () => {
 
             const a = document.createElement("a");
             a.href = url;
-            a.download = `${certificateNumber}.pdf`; // nice filename
+            a.download = `${certificateNumber}.pdf`;
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -261,13 +253,13 @@ const CertificateManagement: React.FC = () => {
 
                     <div className="flex space-x-3 mt-6 pt-4 border-t border-pesiraGray200">
                         {certificate?.status === "pending" ? (<button
-                            onClick={() => handleGenerateCertificate(certificate?.id, certificate?.certificateNumber)}
+                            onClick={() => handleDownloadCertificate(certificate?.id, certificate?.certificateNumber)}
                             className="flex-1 inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald hover:from-pesiraGreen500 hover:to-emerald-700"
                         >
                             <Award className="h-4 w-4 mr-2"/>
                             Generate Certificate
                         </button>) : (<button
-                            onClick={() => handleGenerateCertificate(certificate?.id, certificate?.certificateNumber)}
+                            onClick={() => handleDownloadCertificate(certificate?.id, certificate?.certificateNumber)}
                             className="flex-1 inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-pesiraGray700 border border-pesiraGray300 bg-pesiraWhite hover:bg-pesiraGray50"
                         >
                             <Download className="h-4 w-4 mr-2"/>
