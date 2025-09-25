@@ -29,6 +29,8 @@ interface ChecklistItem {
     answer: boolean | null;
 }
 
+const API_BASE = "https://organic-certification-production.up.railway.app/api/v1";
+
 const InspectionWorkflow: React.FC = () => {
     const [currentStep, setCurrentStep] = useState<number>(1);
     const [farms, setFarms] = useState<Farm[]>([]);
@@ -42,33 +44,36 @@ const InspectionWorkflow: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [message, setMessage] = useState<string | null>(null);
 
-    // load farms once
     useEffect(() => {
-        setLoading(true);
-        fetch("https://organic-certification-production.up.railway.app/api/v1/farm")
-            .then((res) => res.json())
-            .then((json) => {
-                if (json?.data?.content) {
-                    setFarms(json.data.content);
-                } else {
-                    setFarms([]);
-                }
-            })
-            .catch((err) => {
+        let mounted = true;
+        const load = async () => {
+            setLoading(true);
+            try {
+                const res = await fetch(`${API_BASE}/farm`);
+                if (!res.ok) throw new Error("Failed to fetch farms");
+                const json = await res.json();
+                if (!mounted) return;
+                setFarms(json?.data?.content ?? []);
+            } catch (err) {
                 console.error("Error fetching farms:", err);
-                setMessage("Failed to load farms.");
-            })
-            .finally(() => setLoading(false));
+                if (mounted) setMessage("Failed to load farms.");
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        };
+        load();
+        return () => {
+            mounted = false;
+        };
     }, []);
 
-    // Step helpers
+    
     const goPrev = () => setCurrentStep((s) => Math.max(1, s - 1));
     const initiateInspectionForSelectedFarm = async () => {
         if (!selectedFarm) return;
         setMessage(null);
         setCurrentStep(2);
     };
-
 
     const saveInspectorAndLoadChecklist = async () => {
         setMessage(null);
@@ -85,8 +90,7 @@ const InspectionWorkflow: React.FC = () => {
         setLoading(true);
 
         try {
-            // 1) create inspection (POST)
-            const createRes = await fetch("https://organic-certification-production.up.railway.app/api/v1/inspection", {
+            const createRes = await fetch(`${API_BASE}/inspection`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -116,10 +120,7 @@ const InspectionWorkflow: React.FC = () => {
 
             setInspectionId(createdId);
 
-
-            const checklistRes = await fetch(
-                `https://organic-certification-production.up.railway.app/api/v1/checklists/inspection/${createdId}`
-            );
+            const checklistRes = await fetch(`${API_BASE}/checklists/inspection/${createdId}`);
 
             if (!checklistRes.ok) {
                 const text = await checklistRes.text();
@@ -142,7 +143,6 @@ const InspectionWorkflow: React.FC = () => {
 
             setChecklist(formatted);
 
-
             setCurrentStep(3);
         } catch (err) {
             console.error("saveInspectorAndLoadChecklist error:", err);
@@ -152,14 +152,38 @@ const InspectionWorkflow: React.FC = () => {
         }
     };
 
-
     const setAnswer = (checklistId: string, answer: boolean) => {
-        setChecklist((prev) =>
-            prev.map((item) => (item.id === checklistId ? { ...item, answer } : item))
-        );
+        setChecklist((prev) => prev.map((item) => (item.id === checklistId ? { ...item, answer } : item)));
     };
 
-    // Submit answers
+    const completeInspection = async (idToComplete?: string) => {
+        const id = idToComplete ?? inspectionId;
+        if (!id) {
+            setMessage("Missing inspection id to complete.");
+            return false;
+        }
+
+        try {
+            setLoading(true);
+            const completeRes = await fetch(`${API_BASE}/inspection/${id}/complete`, { method: "POST" });
+            if (!completeRes.ok) {
+                const text = await completeRes.text();
+                console.warn("Complete inspection failed:", text);
+                setMessage("Failed to complete inspection.");
+                return false;
+            }
+
+            setMessage("Inspection completed successfully.");
+            return true;
+        } catch (err) {
+            console.error("completeInspection error:", err);
+            setMessage("Network error while completing inspection.");
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const submitAnswersAndComplete = async () => {
         if (!inspectionId) {
             setMessage("Missing inspection id.");
@@ -168,22 +192,17 @@ const InspectionWorkflow: React.FC = () => {
 
         const unanswered = checklist.filter((c) => c.answer === null);
         if (unanswered.length > 0) {
-            const confirmProceed = window.confirm(
-                `There are ${unanswered.length} unanswered questions. Submit anyway?`
-            );
+            const confirmProceed = window.confirm(`There are ${unanswered.length} unanswered questions. Submit anyway?`);
             if (!confirmProceed) return;
         }
 
-        const answersPayload = checklist.map((c) => ({
-            checklistId: c.id,
-            answer: !!c.answer,
-        }));
+        const answersPayload = checklist.map((c) => ({ checklistId: c.id, answer: !!c.answer }));
 
         setLoading(true);
         setMessage(null);
 
         try {
-            const resAnswers = await fetch("https://organic-certification-production.up.railway.app/api/v1/checklists/answers", {
+            const resAnswers = await fetch(`${API_BASE}/checklists/answers`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(answersPayload),
@@ -197,18 +216,22 @@ const InspectionWorkflow: React.FC = () => {
                 return;
             }
 
-            // success response expected: { code: 200, message: "Checklist answers submitted successfully" }
-            setMessage("Checklist answers submitted successfully.");
+
+            const completed = await completeInspection();
+            if (!completed) {
+                setCurrentStep(4);
+                return;
+            }
+
             setCurrentStep(4);
         } catch (err) {
-            console.error("Failed submitting answers:", err);
-            setMessage("Network error while submitting answers.");
+            console.error("Error submitting answers or completing inspection:", err);
+            setMessage("Network error while submitting inspection.");
         } finally {
             setLoading(false);
         }
     };
 
-    // UI helpers
     const steps = [
         { id: 1, name: "Farm Selection", icon: MapPin },
         { id: 2, name: "Inspector Details", icon: ClipboardCheck },
@@ -332,7 +355,7 @@ const InspectionWorkflow: React.FC = () => {
                 <div className="flex items-center gap-3">
                     {message && <div className="text-sm text-amber-700">{message}</div>}
                     <button onClick={submitAnswersAndComplete} disabled={loading} className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}>
-                        {loading ? "Submitting..." : "Submit Answers & Complete"}
+                        {loading ? "Submitting..." : "Complete Inspection"}
                     </button>
                 </div>
             </div>
@@ -354,7 +377,7 @@ const InspectionWorkflow: React.FC = () => {
                 <p className="mt-2 text-sm text-pesiraGray700">{message ?? "Completed successfully."}</p>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-3">
                 <button
                     onClick={() => {
                         // reset wizard
@@ -369,6 +392,21 @@ const InspectionWorkflow: React.FC = () => {
                     className="px-4 py-2 rounded border"
                 >
                     New Inspection
+                </button>
+
+                <button
+                    onClick={async () => {
+                        // allow retry of complete if something failed earlier
+                        setMessage(null);
+                        setLoading(true);
+                        const ok = await completeInspection();
+                        setLoading(false);
+                        if (ok) setMessage("Inspection completed successfully.");
+                    }}
+                    disabled={loading || !inspectionId}
+                    className="px-4 py-2 rounded text-white bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald disabled:opacity-50"
+                >
+                    {loading ? "Completing..." : "Complete Inspection"}
                 </button>
             </div>
         </div>
@@ -408,7 +446,7 @@ const InspectionWorkflow: React.FC = () => {
                         </button>
                     ) : currentStep === 3 ? (
                         <button onClick={submitAnswersAndComplete} disabled={loading} className={`px-4 py-2 rounded text-white ${loading ? "bg-pesiraGray400" : "bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald"}`}>
-                            {loading ? "Submitting..." : "Submit Answers"}
+                            {loading ? "Submitting..." : "Complete Inspection"}
                         </button>
                     ) : (
                         <div />
