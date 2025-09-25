@@ -29,7 +29,7 @@ interface ChecklistItem {
     answer: boolean | null;
 }
 
-const API_BASE = "http://localhost:8080/api/v1";
+const API_BASE = "https://organic-certification-production.up.railway.app/api/v1";
 
 const InspectionWorkflow: React.FC = () => {
     const [currentStep, setCurrentStep] = useState<number>(1);
@@ -90,7 +90,6 @@ const InspectionWorkflow: React.FC = () => {
         setLoading(true);
 
         try {
-            // 1) create inspection (POST)
             const createRes = await fetch(`${API_BASE}/inspection`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -121,7 +120,6 @@ const InspectionWorkflow: React.FC = () => {
 
             setInspectionId(createdId);
 
-            // 2) fetch checklist for inspection
             const checklistRes = await fetch(`${API_BASE}/checklists/inspection/${createdId}`);
 
             if (!checklistRes.ok) {
@@ -167,7 +165,7 @@ const InspectionWorkflow: React.FC = () => {
 
         try {
             setLoading(true);
-            const completeRes = await fetch(`${API_BASE}/${id}/complete`, { method: "POST" });
+            const completeRes = await fetch(`${API_BASE}/inspection/${id}/complete`, { method: "POST" });
             if (!completeRes.ok) {
                 const text = await completeRes.text();
                 console.warn("Complete inspection failed:", text);
