@@ -1,6 +1,7 @@
 import React, {useState, useMemo, useEffect} from 'react';
 import { Search, Plus, MapPin, Wheat, Calendar, Filter, ArrowUpDown, Eye, Edit, History } from 'lucide-react';
 import {API_BASE} from "../config/api.ts";
+import {toast} from "react-toastify";
 
 interface FarmerResponse {
   id: string;
@@ -89,6 +90,7 @@ const FieldManagement: React.FC = () => {
             });
             const data = await response.json();
             setResponseMsg(`${data.message}`)
+            toast.success(`${data.message}`);
             if (response.ok) {
                 setFields(prev => [...prev, data.data]);
                 setnewField({name: '', crop: '', areaHa: '', farmId: ''})
@@ -96,10 +98,10 @@ const FieldManagement: React.FC = () => {
             }
         }catch(error){
             setResponseMsg(`❌ Network error: ${(error as Error).message}`);
+            toast.error(` Network error: ${(error as Error).message}`)
         }
     }
 
-  // const farms = [...new Set(fields.map(field => fields.))].sort();
   const crops = [...new Set(fields.map(field => field.crop))].sort();
 
   const handleSort = (field: keyof Field) => {
@@ -120,8 +122,7 @@ const FieldManagement: React.FC = () => {
       
       const matchesFarm = farmFilter === 'all' || field.name === farmFilter;
       const matchesCrop = cropFilter === 'all' || field.crop === cropFilter;
-      // const matchesStatus = statusFilter === 'all' || field.status === statusFilter;
-      
+
       return matchesSearch && matchesFarm && matchesCrop ;
     });
 
@@ -213,13 +214,6 @@ const FieldManagement: React.FC = () => {
                     Submit
                 </button>
             </form>
-        )}
-
-        {/* Response */}
-        {responseMsg && (
-            <div className="p-3 rounded-md bg-gray-100 text-sm text-gray-700">
-                {responseMsg}
-            </div>
         )}
 
       {/* Stats Cards */}
