@@ -8,6 +8,10 @@ import {
     FileText,
 } from "lucide-react";
 
+import {toast} from "react-toastify";
+import {API_BASE} from "../config/api.ts";
+
+
 interface FarmerResponse {
     id: string;
     name: string;
@@ -29,7 +33,6 @@ interface ChecklistItem {
     answer: boolean | null;
 }
 
-const API_BASE = "https://organic-certification-production.up.railway.app/api/v1";
 
 const InspectionWorkflow: React.FC = () => {
     const [currentStep, setCurrentStep] = useState<number>(1);
@@ -56,6 +59,7 @@ const InspectionWorkflow: React.FC = () => {
                 setFarms(json?.data?.content ?? []);
             } catch (err) {
                 console.error("Error fetching farms:", err);
+                toast.error("Failed to load farms.");
                 if (mounted) setMessage("Failed to load farms.");
             } finally {
                 if (mounted) setLoading(false);
@@ -79,10 +83,12 @@ const InspectionWorkflow: React.FC = () => {
         setMessage(null);
 
         if (!selectedFarm) {
+            toast.error("Please select a farm first.");
             setMessage("Please select a farm first.");
             return;
         }
         if (!inspectorName || !inspectionDate) {
+            toast.error("Please enter inspector name and date.");
             setMessage("Please enter inspector name and date.");
             return;
         }
@@ -103,6 +109,7 @@ const InspectionWorkflow: React.FC = () => {
             if (!createRes.ok) {
                 const text = await createRes.text();
                 console.warn("Create inspection failed:", text);
+                toast.error("Failed to create inspection.");
                 setMessage("Failed to create inspection.");
                 setLoading(false);
                 return;
@@ -113,6 +120,7 @@ const InspectionWorkflow: React.FC = () => {
             const createdId = createJson?.data?.id ?? createJson?.data?.inspectionId ?? null;
             if (!createdId) {
                 console.warn("No inspection id returned:", createJson);
+                toast.error("No inspection id returned by server.");
                 setMessage("No inspection id returned by server.");
                 setLoading(false);
                 return;
@@ -172,11 +180,10 @@ const InspectionWorkflow: React.FC = () => {
                 setMessage("Failed to complete inspection.");
                 return false;
             }
-
-            setMessage("Inspection completed successfully.");
             return true;
         } catch (err) {
             console.error("completeInspection error:", err);
+            toast.error("Network error while completing inspection.");
             setMessage("Network error while completing inspection.");
             return false;
         } finally {
@@ -186,6 +193,7 @@ const InspectionWorkflow: React.FC = () => {
 
     const submitAnswersAndComplete = async () => {
         if (!inspectionId) {
+            toast.error("Missing inspection id.");
             setMessage("Missing inspection id.");
             return;
         }
@@ -211,6 +219,7 @@ const InspectionWorkflow: React.FC = () => {
             if (!resAnswers.ok) {
                 const text = await resAnswers.text();
                 console.warn("Answers POST failed:", text);
+                toast.error("Failed to submit answers.");
                 setMessage("Failed to submit answers.");
                 setLoading(false);
                 return;
@@ -226,6 +235,7 @@ const InspectionWorkflow: React.FC = () => {
             setCurrentStep(4);
         } catch (err) {
             console.error("Error submitting answers or completing inspection:", err);
+            toast.error("Network error while submitting inspection.");
             setMessage("Network error while submitting inspection.");
         } finally {
             setLoading(false);
@@ -401,7 +411,7 @@ const InspectionWorkflow: React.FC = () => {
                         setLoading(true);
                         const ok = await completeInspection();
                         setLoading(false);
-                        if (ok) setMessage("Inspection completed successfully.");
+                        if (ok) toast.success("Inspection completed. Proceed to Certificates to generate");
                     }}
                     disabled={loading || !inspectionId}
                     className="px-4 py-2 rounded text-white bg-gradient-to-r from-pesiraGreen500 to-pesiraEmerald disabled:opacity-50"

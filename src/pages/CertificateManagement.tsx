@@ -1,5 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {AlertCircle, Award, Calendar, CheckCircle, Download, Filter, Search,} from "lucide-react";
+import {toast} from "react-toastify";
+import {API_BASE} from "../config/api.ts";
 
 interface Certificate {
     id: string;
@@ -43,12 +45,13 @@ const CertificateManagement: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch("http://localhost:8080/api/v1/certificate");
+            const res = await fetch(`${API_BASE}/certificate`);
             if (!res.ok) throw new Error("Failed to fetch");
             const data = await res.json();
             setCertificates(data?.data?.content || []);
         } catch (err) {
-            setError("Error fetching certificates. Please try again.");
+            toast.error("Error fetching certificates. Please try again.");
+            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -99,7 +102,7 @@ const CertificateManagement: React.FC = () => {
 
     const handleDownloadCertificate = async (certificateId: string, certificateNumber: string) => {
         try {
-            const res = await fetch(`http://localhost:8080/api/v1/certificate/${certificateId}/download`, {
+            const res = await fetch(`${API_BASE}/certificate/${certificateId}/download`, {
                 method: "GET",
                 headers: {
                     "Accept": "application/pdf",
@@ -122,7 +125,7 @@ const CertificateManagement: React.FC = () => {
 
             window.URL.revokeObjectURL(url);
         } catch (err) {
-            alert("Error downloading certificate.");
+            toast.error("Error downloading certificate. Please try again.");
             console.error(err);
         }
     };

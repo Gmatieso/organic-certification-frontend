@@ -1,5 +1,8 @@
 import React, {useState, useMemo, useEffect} from 'react';
 import { Search, Plus, User, Phone, Mail, MapPin, Edit, Eye, Filter, ArrowUpDown } from 'lucide-react';
+import {toast} from 'react-toastify';
+import {API_BASE} from "../config/api.ts";
+
 
 interface Farmer {
   id: number;
@@ -29,12 +32,11 @@ const FarmerManagement: React.FC = () => {
     county: ''
   });
 
-  const [responseMsg, setResponseMsg] = useState<string | null>(null);
 
   const [farmers, setFarmers] = useState<Farmer[]>([]);
 
   useEffect(() => {
-      fetch('https://organic-certification-production.up.railway.app/api/v1/farmer')
+      fetch(`${API_BASE}/farmer`)
       .then(response => response.json())
       .then(json => {
           if(json.data && json.data.content){
@@ -42,7 +44,8 @@ const FarmerManagement: React.FC = () => {
           }
       })
       .catch(error => {
-        console.error('Error fetching farmers:', error);
+          toast.error('Error fetching farmers');
+          console.error('Error fetching farmers:', error);
       });
   })
 
@@ -96,7 +99,7 @@ const FarmerManagement: React.FC = () => {
     const handleSubmit = async (e:React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await fetch('https://organic-certification-production.up.railway.app/api/v1/farmer', {
+            const response = await fetch(`${API_BASE}/farmer`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -105,14 +108,15 @@ const FarmerManagement: React.FC = () => {
             });
             const data = await response.json();
             if (response.ok) {
-                setResponseMsg(`${data.message}`)
+                toast.success(`${data.message}`);
                 setNewFarmer({ name: '', phone: '', email: '', county: '' });
                 setShowForm(false);
             }else {
-                setResponseMsg(`❌ Error: ${data.message}`);
+                toast.error(`Error: ${data.message}`);
             }
         }catch (error) {
-            setResponseMsg(`❌ Network error: ${(error as Error).message}`);
+            toast.error(`Error: ${(error as Error).message}`);
+            console.error('Error submitting form:', error);
         }
     }
 
@@ -183,12 +187,6 @@ const FarmerManagement: React.FC = () => {
             </form>
         )}
 
-        {/* Response */}
-        {responseMsg && (
-            <div className="p-3 rounded-md bg-gray-100 text-sm text-gray-700">
-                {responseMsg}
-            </div>
-        )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

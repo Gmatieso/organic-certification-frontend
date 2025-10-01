@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -7,6 +6,8 @@ import InspectionWorkflow from './pages/InspectionWorkflow';
 import CertificateManagement from './pages/CertificateManagement';
 import FarmerManagement from './pages/FarmerManagement';
 import FieldManagement from './pages/FieldManagement';
+import  {ToastContainer} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   return (
@@ -20,6 +21,18 @@ function App() {
           <Route path="/farmers" element={<FarmerManagement />} />
           <Route path="/fields" element={<FieldManagement />} />
         </Routes>
+          <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="colored"
+          />
       </Layout>
     </Router>
   );

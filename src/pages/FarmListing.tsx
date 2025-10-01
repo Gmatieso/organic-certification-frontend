@@ -1,5 +1,8 @@
 import React, {useState, useMemo, useEffect} from 'react';
 import { Search, Plus, MapPin, ArrowUpDown, Filter } from 'lucide-react';
+import {toast} from 'react-toastify';
+import {API_BASE} from "../config/api.ts";
+
 
 
 interface FarmerResponse {
@@ -19,7 +22,6 @@ interface Farm {
 }
 
 
-
 const FarmListing: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<keyof Farm>('farmName');
@@ -34,23 +36,22 @@ const FarmListing: React.FC = () => {
       farmerId:""
   })
 
-    const [responseMsg, setResponseMsg] = useState<string | null>(null);
 
     const [farms, setFarms] = useState<Farm[]>([]);
 
   useEffect(()=> {
-      fetch('https://organic-certification-production.up.railway.app/api/v1/farm')
+      fetch(`${API_BASE}/farm`)
           .then(res => res.json())
           .then(json => {
               if(json.data && json.data.content) {
                   setFarms(json.data.content);
               }
           })
-          .catch(err => console.log('Error fetching farms:', err))
+          .catch(err => toast.error('Error fetching farms:', err))
   }, [])
 
     useEffect(() => {
-        fetch('https://organic-certification-production.up.railway.app/api/v1/farmer')
+        fetch(`${API_BASE}/farmer`)
             .then(res => res.json())
             .then(json => {
                 if(json.data?.content) {
@@ -67,7 +68,7 @@ const FarmListing: React.FC = () => {
     const handleSubmit = async (e:React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await fetch('https://organic-certification-production.up.railway.app/api/v1/farm', {
+            const response = await fetch(`${API_BASE}/farm`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -78,15 +79,14 @@ const FarmListing: React.FC = () => {
                 })
             });
             const data = await response.json();
-            setResponseMsg(`${data.message}`)
             if (response.ok) {
-                setResponseMsg(`${data.message}`)
+                toast.success(`${data.message}`)
                 setnewFarm({farmName: '', location: '', areaHa: '', farmerId: ''});
                 setShowForm(false);
                 setFarms(prevFarms => [...prevFarms, data.data]);
             }
         }catch (error) {
-            setResponseMsg(`❌ Network error: ${(error as Error).message}`);
+            toast.error(`Network error: ${(error as Error).message}`);
         }
     }
   
@@ -201,12 +201,6 @@ const FarmListing: React.FC = () => {
             </form>
         )}
 
-        {/* Response */}
-        {responseMsg && (
-            <div className="p-3 rounded-md bg-gray-100 text-sm text-gray-700">
-                {responseMsg}
-            </div>
-        )}
 
         {/* Filters */}
       <div className="bg-pesiraWhite rounded-lg shadow-sm border border-pesiraGray200 p-4">
