@@ -13,6 +13,8 @@ interface Farmer {
   totalArea: number;
 }
 
+const API_BASE = "http://localhost:8080/api/v1";
+
 const FarmerManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -34,7 +36,7 @@ const FarmerManagement: React.FC = () => {
   const [farmers, setFarmers] = useState<Farmer[]>([]);
 
   useEffect(() => {
-      fetch('https://organic-certification-production.up.railway.app/api/v1/farmer')
+      fetch(`${API_BASE}/farmer`)
       .then(response => response.json())
       .then(json => {
           if(json.data && json.data.content){
@@ -96,7 +98,7 @@ const FarmerManagement: React.FC = () => {
     const handleSubmit = async (e:React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await fetch('https://organic-certification-production.up.railway.app/api/v1/farmer', {
+            const response = await fetch(`${API_BASE}/farmer`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
