@@ -1,6 +1,8 @@
 import React, {useState, useMemo, useEffect} from 'react';
 import { Search, Plus, MapPin, ArrowUpDown, Filter } from 'lucide-react';
 import {toast} from 'react-toastify';
+import {API_BASE} from "../config/api.ts";
+
 
 
 interface FarmerResponse {
@@ -18,8 +20,6 @@ interface Farm {
   areaHa: number;
   farmerResponse: FarmerResponse;
 }
-
-const API_BASE = "http://localhost:8080/api/v1";
 
 
 const FarmListing: React.FC = () => {

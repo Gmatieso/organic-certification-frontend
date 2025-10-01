@@ -1,7 +1,6 @@
 import React, {useState, useMemo, useEffect} from 'react';
 import { Search, Plus, MapPin, Wheat, Calendar, Filter, ArrowUpDown, Eye, Edit, History } from 'lucide-react';
-
-
+import {API_BASE} from "../config/api.ts";
 
 interface FarmerResponse {
   id: string;
@@ -27,7 +26,6 @@ interface Field {
   farmResponse: FarmResponse;
 }
 
-const API_BASE = 'http://localhost:8080/api/v1'
 
 const FieldManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');

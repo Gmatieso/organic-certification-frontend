@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {AlertCircle, Award, Calendar, CheckCircle, Download, Filter, Search,} from "lucide-react";
 import {toast} from "react-toastify";
+import {API_BASE} from "../config/api.ts";
 
 interface Certificate {
     id: string;
@@ -28,7 +29,6 @@ interface FarmerResponse {
     email: string;
     county: string;
 }
-const API_BASE = "http://localhost:8080/api/v1";
 
 const CertificateManagement: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");

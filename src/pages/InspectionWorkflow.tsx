@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 
 import {toast} from "react-toastify";
+import {API_BASE} from "../config/api.ts";
+
 
 interface FarmerResponse {
     id: string;
@@ -31,7 +33,6 @@ interface ChecklistItem {
     answer: boolean | null;
 }
 
-const API_BASE = "http://localhost:8080/api/v1";
 
 const InspectionWorkflow: React.FC = () => {
     const [currentStep, setCurrentStep] = useState<number>(1);

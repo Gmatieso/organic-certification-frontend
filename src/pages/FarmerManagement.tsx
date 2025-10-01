@@ -1,6 +1,8 @@
 import React, {useState, useMemo, useEffect} from 'react';
 import { Search, Plus, User, Phone, Mail, MapPin, Edit, Eye, Filter, ArrowUpDown } from 'lucide-react';
 import {toast} from 'react-toastify';
+import {API_BASE} from "../config/api.ts";
+
 
 interface Farmer {
   id: number;
@@ -13,8 +15,6 @@ interface Farmer {
   registrationDate: string;
   totalArea: number;
 }
-
-const API_BASE = "http://localhost:8080/api/v1";
 
 const FarmerManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
