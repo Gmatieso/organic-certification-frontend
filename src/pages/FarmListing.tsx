@@ -18,6 +18,7 @@ interface Farm {
   farmerResponse: FarmerResponse;
 }
 
+const API_BASE = "http://localhost:8080/api/v1";
 
 
 const FarmListing: React.FC = () => {
@@ -39,7 +40,7 @@ const FarmListing: React.FC = () => {
     const [farms, setFarms] = useState<Farm[]>([]);
 
   useEffect(()=> {
-      fetch('https://organic-certification-production.up.railway.app/api/v1/farm')
+      fetch(`${API_BASE}/farm`)
           .then(res => res.json())
           .then(json => {
               if(json.data && json.data.content) {
@@ -50,7 +51,7 @@ const FarmListing: React.FC = () => {
   }, [])
 
     useEffect(() => {
-        fetch('https://organic-certification-production.up.railway.app/api/v1/farmer')
+        fetch(`${API_BASE}/farmer`)
             .then(res => res.json())
             .then(json => {
                 if(json.data?.content) {
@@ -67,7 +68,7 @@ const FarmListing: React.FC = () => {
     const handleSubmit = async (e:React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await fetch('https://organic-certification-production.up.railway.app/api/v1/farm', {
+            const response = await fetch(`${API_BASE}/farm`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
