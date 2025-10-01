@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {AlertCircle, Award, Calendar, CheckCircle, Download, Filter, Search,} from "lucide-react";
+import {toast} from "react-toastify";
 
 interface Certificate {
     id: string;
@@ -49,7 +50,8 @@ const CertificateManagement: React.FC = () => {
             const data = await res.json();
             setCertificates(data?.data?.content || []);
         } catch (err) {
-            setError("Error fetching certificates. Please try again.");
+            toast.error("Error fetching certificates. Please try again.");
+            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -123,7 +125,7 @@ const CertificateManagement: React.FC = () => {
 
             window.URL.revokeObjectURL(url);
         } catch (err) {
-            alert("Error downloading certificate.");
+            toast.error("Error downloading certificate. Please try again.");
             console.error(err);
         }
     };
