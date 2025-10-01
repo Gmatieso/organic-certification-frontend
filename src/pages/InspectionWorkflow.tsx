@@ -29,7 +29,7 @@ interface ChecklistItem {
     answer: boolean | null;
 }
 
-const API_BASE = "https://organic-certification-production.up.railway.app/api/v1";
+const API_BASE = "http://localhost:8080/api/v1";
 
 const InspectionWorkflow: React.FC = () => {
     const [currentStep, setCurrentStep] = useState<number>(1);

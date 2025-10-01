@@ -27,6 +27,7 @@ interface FarmerResponse {
     email: string;
     county: string;
 }
+const API_BASE = "http://localhost:8080/api/v1";
 
 const CertificateManagement: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");
@@ -43,7 +44,7 @@ const CertificateManagement: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch("http://localhost:8080/api/v1/certificate");
+            const res = await fetch(`${API_BASE}/certificate`);
             if (!res.ok) throw new Error("Failed to fetch");
             const data = await res.json();
             setCertificates(data?.data?.content || []);
@@ -99,7 +100,7 @@ const CertificateManagement: React.FC = () => {
 
     const handleDownloadCertificate = async (certificateId: string, certificateNumber: string) => {
         try {
-            const res = await fetch(`http://localhost:8080/api/v1/certificate/${certificateId}/download`, {
+            const res = await fetch(`${API_BASE}/certificate/${certificateId}/download`, {
                 method: "GET",
                 headers: {
                     "Accept": "application/pdf",
