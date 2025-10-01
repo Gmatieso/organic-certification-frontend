@@ -1,5 +1,6 @@
 import React, {useState, useMemo, useEffect} from 'react';
 import { Search, Plus, MapPin, ArrowUpDown, Filter } from 'lucide-react';
+import {toast} from 'react-toastify';
 
 
 interface FarmerResponse {
@@ -35,7 +36,6 @@ const FarmListing: React.FC = () => {
       farmerId:""
   })
 
-    const [responseMsg, setResponseMsg] = useState<string | null>(null);
 
     const [farms, setFarms] = useState<Farm[]>([]);
 
@@ -47,7 +47,7 @@ const FarmListing: React.FC = () => {
                   setFarms(json.data.content);
               }
           })
-          .catch(err => console.log('Error fetching farms:', err))
+          .catch(err => toast.error('Error fetching farms:', err))
   }, [])
 
     useEffect(() => {
@@ -79,15 +79,14 @@ const FarmListing: React.FC = () => {
                 })
             });
             const data = await response.json();
-            setResponseMsg(`${data.message}`)
             if (response.ok) {
-                setResponseMsg(`${data.message}`)
+                toast.success(`${data.message}`)
                 setnewFarm({farmName: '', location: '', areaHa: '', farmerId: ''});
                 setShowForm(false);
                 setFarms(prevFarms => [...prevFarms, data.data]);
             }
         }catch (error) {
-            setResponseMsg(`❌ Network error: ${(error as Error).message}`);
+            toast.error(`Network error: ${(error as Error).message}`);
         }
     }
   
@@ -202,12 +201,6 @@ const FarmListing: React.FC = () => {
             </form>
         )}
 
-        {/* Response */}
-        {responseMsg && (
-            <div className="p-3 rounded-md bg-gray-100 text-sm text-gray-700">
-                {responseMsg}
-            </div>
-        )}
 
         {/* Filters */}
       <div className="bg-pesiraWhite rounded-lg shadow-sm border border-pesiraGray200 p-4">
